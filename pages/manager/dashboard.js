@@ -203,7 +203,6 @@ export default function ManagerDashboard() {
 // ── Schedule Modal ────────────────────────────────────────────
 function ScheduleModal({ request, techs, contractors, onConfirm, onClose }) {
   const [date, setDate]         = useState(request.date_needed || '')
-  const [techId, setTechId]     = useState('')
   const [techName, setTechName] = useState('')
   const [notes, setNotes]       = useState('')
   const [saving, setSaving]     = useState(false)
@@ -213,22 +212,20 @@ function ScheduleModal({ request, techs, contractors, onConfirm, onClose }) {
   const [insulation, setInsulation] = useState({ enabled: request.needs_insulation, contractorId: '', contractorName: '' })
   const [painting, setPainting]     = useState({ enabled: request.needs_painting, contractorId: '', contractorName: '' })
 
-  function pickTech(val) {
-    const [id, name] = val.split('||')
-    setTechId(id); setTechName(name)
-  }
-  function pickContractor(val, setState) {
-    if (!val) { setState(prev => ({ ...prev, contractorId: '', contractorName: '' })); return }
-    const [id, name] = val.split('||')
-    setState(prev => ({ ...prev, contractorId: id, contractorName: name }))
+  // Match typed name to a profile id if possible
+  function findTechId(name) {
+    const match = techs.find(t => t.full_name.toLowerCase() === name.toLowerCase())
+    return match ? match.id : null
   }
 
   async function submit() {
-    if (!date || !techId) { alert('Please select date and technician.'); return }
+    if (!date || !techName.trim()) { alert('Please enter a date and technician name.'); return }
     setSaving(true)
     await onConfirm({
       requestId: request.id,
-      techId, techName, date, notes,
+      techId: findTechId(techName) || null,
+      techName: techName.trim(),
+      date, notes,
       supportJobs: [
         { ...scaffold,   type: 'Scaffold',            role: 'scaffold' },
         { ...insulation, type: 'Insulation Removal',  role: 'insulation' },
@@ -258,11 +255,17 @@ function ScheduleModal({ request, techs, contractors, onConfirm, onClose }) {
                 <input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} />
               </div>
               <div>
-                <label className="label">Assign technician</label>
-                <select className="input" onChange={e => pickTech(e.target.value)} defaultValue="">
-                  <option value="" disabled>Select tech</option>
-                  {techs.map(t => <option key={t.id} value={`${t.id}||${t.full_name}`}>{t.full_name}</option>)}
-                </select>
+                <label className="label">Technician name</label>
+                <input
+                  className="input"
+                  list="tech-suggestions"
+                  placeholder="Type technician name…"
+                  value={techName}
+                  onChange={e => setTechName(e.target.value)}
+                />
+                <datalist id="tech-suggestions">
+                  {techs.map(t => <option key={t.id} value={t.full_name} />)}
+                </datalist>
               </div>
             </div>
             <label className="label">Manager notes</label>
@@ -315,6 +318,7 @@ function ScheduleModal({ request, techs, contractors, onConfirm, onClose }) {
 }
 
 function SupportJobRow({ icon, label, enabled, contractors, onToggle, onPick }) {
+  const listId = `contractors-${label.replace(/\s+/g,'-')}`
   return (
     <div className="border border-gray-100 rounded-lg p-3 mb-2">
       <div className="flex items-center gap-2 mb-2">
@@ -325,11 +329,17 @@ function SupportJobRow({ icon, label, enabled, contractors, onToggle, onPick }) 
         </label>
       </div>
       {enabled && (
-        <select className="input text-xs" onChange={e => onPick(e.target.value)} defaultValue="">
-          <option value="">Assign contractor (optional)</option>
-          {contractors.map(c => <option key={c.id} value={`${c.id}||${c.full_name}`}>{c.full_name} — {c.company || 'No company'}</option>)}
-          {contractors.length === 0 && <option disabled>No {label} contractors in system</option>}
-        </select>
+        <>
+          <input
+            className="input text-xs"
+            list={listId}
+            placeholder={`Type ${label} contractor name (optional)…`}
+            onChange={e => onPick(e.target.value)}
+          />
+          <datalist id={listId}>
+            {contractors.map(c => <option key={c.id} value={c.full_name} />)}
+          </datalist>
+        </>
       )}
     </div>
   )
