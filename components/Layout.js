@@ -8,11 +8,16 @@ export default function Layout({ profile, nav = [], children }) {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <header className="bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <span className="text-xl">📋</span>
-          <span className="font-semibold text-sm">NDT Portal</span>
-          <span className="text-gray-300">|</span>
-          <span className="text-gray-400 text-sm">Singapore</span>
+        <div className="flex items-center gap-3 px-4 py-2">
+          {/* Cutech logo */}
+          <div className="flex items-center gap-2.5 mr-2">
+            <img src="/cutech_logo.png" alt="Cutech" className="h-8 w-auto" />
+          </div>
+          <div className="h-6 w-px bg-gray-200" />
+          <div className="flex flex-col leading-tight">
+            <span className="font-semibold text-sm text-gray-800">NDT Portal</span>
+            <span className="text-xs text-gray-400">Singapore</span>
+          </div>
           <div className="ml-auto flex items-center gap-2">
             {profile && <>
               <span className={`badge ${ROLE_COLOR[profile.role]}`}>{ROLE_LABEL[profile.role]}</span>
@@ -38,6 +43,14 @@ export default function Layout({ profile, nav = [], children }) {
         )}
       </header>
       <main className="flex-1 p-4 sm:p-6 max-w-6xl mx-auto w-full">{children}</main>
+      {/* Footer */}
+      <footer className="border-t border-gray-100 bg-white py-3 px-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <img src="/cutech_logo.png" alt="Cutech" className="h-5 w-auto opacity-60" />
+          <span className="text-xs text-gray-400">NDT Portal · Singapore</span>
+        </div>
+        <span className="text-xs text-gray-300">© {new Date().getFullYear()} Cutech</span>
+      </footer>
     </div>
   )
 }

@@ -12,39 +12,49 @@ export default function ClientNew() {
   const router = useRouter()
   const [profile, setProfile] = useState(null)
   const [user, setUser]       = useState(null)
-  const [step, setStep]       = useState(1)   // 1 | 2 | 'done'
+  const [step, setStep]       = useState(1)
   const [saving, setSaving]   = useState(false)
-  const [draftId, setDraftId] = useState(null) // id of saved step-1 request
+  const [draftId, setDraftId] = useState(null)
 
-  // Step 1 fields
   const [s1, setS1] = useState({
-    location: '', contact_name: '', contact_phone: '', contact_email: '',
-    ndt_method: '', scope_qty: '', description: '',
+    location: '', equipment_no: '', contact_name: '', contact_phone: '', contact_email: '',
+    ndt_method: '', scope_qty: '', attachments: [], description: '',
     date_needed: '', priority: 'Normal',
     needs_scaffold: false, needs_insulation: false, needs_painting: false,
   })
 
-  // Step 2 fields
   const [s2, setS2] = useState({
     material: '', thickness_mm: '', pipe_size: '',
     p_number: '', code_standard: '', acceptance: '', special_notes: '',
   })
 
-  useEffect(() => {
-    init()
-  }, [])
+  useEffect(() => { init() }, [])
 
   async function init() {
     const { data: { user: u } } = await supabase.auth.getUser()
     if (!u) { router.push('/'); return }
     const { data: p } = await supabase.from('profiles').select('*').eq('id', u.id).single()
-    if (!p || p.role !== 'client') { router.push('/'); return }
+    if (!p || !['client','manager'].includes(p.role)) { router.push('/'); return }
     setProfile(p); setUser(u)
-
-    // If coming from "Add technical details" link
     if (router.query.step2) {
       const { data: r } = await supabase.from('requests').select('*').eq('id', router.query.step2).single()
       if (r) { setDraftId(r.id); setStep(2) }
+    }
+  }
+
+  async function uploadAttachments(requestId) {
+    if (!s1.attachments || !s1.attachments.length) return
+    for (const file of s1.attachments) {
+      const path = `${requestId}/document/${Date.now()}-${file.name}`
+      const { error: upErr } = await supabase.storage.from('documents').upload(path, file)
+      if (!upErr) {
+        await supabase.from('request_documents').insert({
+          request_id: requestId, uploaded_by: user.id,
+          uploader_name: profile.full_name, uploader_role: profile.role,
+          file_name: file.name, file_path: path,
+          file_size: file.size, file_type: 'document', bucket: 'documents',
+        })
+      }
     }
   }
 
@@ -54,24 +64,28 @@ export default function ClientNew() {
     }
     setSaving(true)
     const { data, error } = await supabase.from('requests').insert({
-      client_id:    user.id,
-      company:      profile.company || profile.full_name,
-      location:     s1.location,
-      contact_name: s1.contact_name,
-      contact_phone: s1.contact_phone,
-      contact_email: s1.contact_email,
-      ndt_method:   s1.ndt_method,
-      scope_qty:    s1.scope_qty,
-      description:  s1.description,
-      date_needed:  s1.date_needed,
-      priority:     s1.priority,
-      needs_scaffold:   s1.needs_scaffold,
-      needs_insulation: s1.needs_insulation,
-      needs_painting:   s1.needs_painting,
-      step2_complete: false,
+      client_id:         user.id,
+      company:           profile.company || profile.full_name,
+      location:          s1.location,
+      equipment_no:      s1.equipment_no,
+      contact_name:      s1.contact_name,
+      contact_phone:     s1.contact_phone,
+      contact_email:     s1.contact_email,
+      requested_by_id:   user.id,
+      requested_by_name: profile.full_name,
+      ndt_method:        s1.ndt_method,
+      scope_qty:         s1.scope_qty,
+      description:       s1.description,
+      date_needed:       s1.date_needed,
+      priority:          s1.priority,
+      needs_scaffold:    s1.needs_scaffold,
+      needs_insulation:  s1.needs_insulation,
+      needs_painting:    s1.needs_painting,
+      step2_complete:    false,
     }).select().single()
+    if (error) { setSaving(false); alert('Error submitting: ' + error.message); return }
+    await uploadAttachments(data.id)
     setSaving(false)
-    if (error) { alert('Error submitting: ' + error.message); return }
     if (goStep2) { setDraftId(data.id); setStep(2) }
     else setStep('done')
   }
@@ -79,8 +93,7 @@ export default function ClientNew() {
   async function submitStep2() {
     setSaving(true)
     const { error } = await supabase.from('requests').update({
-      ...s2,
-      step2_complete: true,
+      ...s2, step2_complete: true,
     }).eq('id', draftId)
     setSaving(false)
     if (error) { alert('Error saving: ' + error.message); return }
@@ -92,7 +105,6 @@ export default function ClientNew() {
   return (
     <Layout profile={profile} nav={NAV}>
       <div className="max-w-xl mx-auto">
-        {/* Step indicator */}
         {step !== 'done' && (
           <div className="flex items-center gap-0 mb-6">
             {['Basic info', 'Technical details'].map((label, i) => {
@@ -115,16 +127,33 @@ export default function ClientNew() {
           </div>
         )}
 
-        {/* ── STEP 1 ── */}
         {step === 1 && (
           <>
             <h1 className="text-xl font-bold mb-5">New NDT Request</h1>
 
+            {/* Requested by — auto filled */}
+            <div className="card mb-4">
+              <div className="section-title">👤 Requested by</div>
+              <div className="flex items-center gap-3 p-2.5 bg-blue-50 rounded-lg border border-blue-100">
+                <div className="w-8 h-8 rounded-full bg-blue-700 text-white flex items-center justify-center text-xs font-bold">
+                  {profile.full_name?.slice(0,1)}
+                </div>
+                <div>
+                  <div className="text-sm font-medium">{profile.full_name}</div>
+                  <div className="text-xs text-gray-400">{profile.company || profile.email}</div>
+                </div>
+                <span className="ml-auto text-xs text-blue-600 font-medium">Auto-filled</span>
+              </div>
+            </div>
+
             <div className="card mb-4">
               <div className="section-title">📍 Site information</div>
-              <label className="label">Site / plant location *</label>
-              <input className="input" placeholder="e.g. Tuas Shipyard, Berth 7"
+              <label className="label">Site / plant location / unit number *</label>
+              <input className="input" placeholder="e.g. Tuas Shipyard, Berth 7 / Unit 3"
                 value={s1.location} onChange={e => setS1(p => ({...p, location: e.target.value}))} />
+              <label className="label">Equipment / piping number</label>
+              <input className="input" placeholder="e.g. V-1201, P-4401A, L-101-3&quot;-CS-1A"
+                value={s1.equipment_no} onChange={e => setS1(p => ({...p, equipment_no: e.target.value}))} />
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="label">Contact person on site</label>
@@ -149,6 +178,30 @@ export default function ClientNew() {
               <label className="label">Estimated quantity</label>
               <input className="input" placeholder="e.g. 50 weld joints, 200 m²"
                 value={s1.scope_qty} onChange={e => setS1(p => ({...p, scope_qty: e.target.value}))} />
+
+              {/* File upload */}
+              <label className="label">Upload drawings / specifications / notes (optional)</label>
+              <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:border-blue-300 transition-colors">
+                <input type="file" multiple id="step1-files" className="hidden"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.dwg,.dxf"
+                  onChange={e => setS1(p => ({...p, attachments: Array.from(e.target.files)}))} />
+                <label htmlFor="step1-files" className="cursor-pointer block">
+                  <div className="text-2xl mb-1">📎</div>
+                  <div className="text-sm text-gray-500">Click to upload drawings, specs, or notes</div>
+                  <div className="text-xs text-gray-400 mt-1">PDF, Word, Excel, Images, DWG — max 50MB each</div>
+                </label>
+                {s1.attachments?.length > 0 && (
+                  <div className="mt-3 space-y-1">
+                    {s1.attachments.map((f, i) => (
+                      <div key={i} className="flex items-center justify-between bg-blue-50 rounded px-3 py-1.5 text-xs">
+                        <span className="text-blue-700 font-medium truncate">📄 {f.name}</span>
+                        <span className="text-gray-400 ml-2 flex-shrink-0">{(f.size/1024).toFixed(0)} KB</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <label className="label">Description of scope</label>
               <textarea className="input" rows={3} placeholder="What needs to be inspected? Any access conditions or hazards?"
                 value={s1.description} onChange={e => setS1(p => ({...p, description: e.target.value}))} />
@@ -202,14 +255,12 @@ export default function ClientNew() {
           </>
         )}
 
-        {/* ── STEP 2 ── */}
         {step === 2 && (
           <>
             <h1 className="text-xl font-bold mb-5">Technical Details</h1>
             <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-4 text-sm text-emerald-800">
               ✅ Basic info saved. Add technical details for a faster quote, or skip and submit now.
             </div>
-
             <div className="card mb-4">
               <div className="section-title">🔩 Material & component</div>
               <div className="grid grid-cols-2 gap-3">
@@ -235,7 +286,6 @@ export default function ClientNew() {
                 </div>
               </div>
             </div>
-
             <div className="card mb-5">
               <div className="section-title">📐 Standards & acceptance</div>
               <div className="grid grid-cols-2 gap-3">
@@ -255,11 +305,8 @@ export default function ClientNew() {
                 placeholder="Radiation clearance needed, confined space, hot work permit, etc."
                 value={s2.special_notes} onChange={e => setS2(p => ({...p, special_notes: e.target.value}))} />
             </div>
-
             <div className="flex items-center justify-between gap-3">
-              <button className="btn btn-ghost" onClick={() => setStep('done')} disabled={saving}>
-                Skip & submit
-              </button>
+              <button className="btn btn-ghost" onClick={() => setStep('done')} disabled={saving}>Skip & submit</button>
               <button className="btn btn-success" onClick={submitStep2} disabled={saving}>
                 {saving ? 'Saving…' : '✅ Submit with details'}
               </button>
@@ -267,22 +314,18 @@ export default function ClientNew() {
           </>
         )}
 
-        {/* ── DONE ── */}
         {step === 'done' && (
           <div className="card text-center py-12">
             <div className="text-5xl mb-4">✅</div>
             <h2 className="text-xl font-bold mb-2">Request submitted!</h2>
-            <p className="text-gray-500 text-sm mb-6">
-              Our NDT team will review your request and contact you to confirm the schedule.
-              You can track progress from your requests page.
-            </p>
+            <p className="text-gray-500 text-sm mb-6">Our NDT team will review and contact you to confirm the schedule.</p>
             <div className="flex gap-3 justify-center">
-              <button className="btn btn-primary" onClick={() => router.push('/client/requests')}>
-                View my requests →
-              </button>
-              <button className="btn btn-ghost" onClick={() => { setStep(1); setS1({ location:'',contact_name:'',contact_phone:'',contact_email:'',ndt_method:'',scope_qty:'',description:'',date_needed:'',priority:'Normal',needs_scaffold:false,needs_insulation:false,needs_painting:false }); setS2({ material:'',thickness_mm:'',pipe_size:'',p_number:'',code_standard:'',acceptance:'',special_notes:'' }) }}>
-                Submit another
-              </button>
+              <button className="btn btn-primary" onClick={() => router.push('/client/requests')}>View my requests →</button>
+              <button className="btn btn-ghost" onClick={() => {
+                setStep(1)
+                setS1({ location:'',equipment_no:'',contact_name:'',contact_phone:'',contact_email:'',ndt_method:'',scope_qty:'',attachments:[],description:'',date_needed:'',priority:'Normal',needs_scaffold:false,needs_insulation:false,needs_painting:false })
+                setS2({ material:'',thickness_mm:'',pipe_size:'',p_number:'',code_standard:'',acceptance:'',special_notes:'' })
+              }}>Submit another</button>
             </div>
           </div>
         )}
