@@ -58,6 +58,30 @@ export default function TechJobs() {
   async function advance(id, newStatus) {
     setSaving(id)
     await supabase.from('requests').update({ status: newStatus }).eq('id', id)
+    // Send email notification when draft report submitted
+    if (newStatus === 'Draft Report Submitted') {
+      const job = [...active, ...history].find(r => r.id === id)
+      if (job) {
+        // Get client email
+        const { data: clientProfile } = await supabase
+          .from('profiles').select('email').eq('id', job.client_id).single()
+        if (clientProfile?.email) {
+          try {
+            await fetch('/api/notify-report', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                to: clientProfile.email,
+                requestNo: job.request_no,
+                company: job.company,
+                method: job.ndt_method,
+                location: job.location,
+              })
+            })
+          } catch(e) { console.warn('Email notification failed:', e) }
+        }
+      }
+    }
     await load(user.id)
     setSaving(null)
     if (selected?.id === id) setSelected(prev => ({ ...prev, status: newStatus }))

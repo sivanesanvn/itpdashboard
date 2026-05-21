@@ -239,6 +239,18 @@ export default function ManagerRequests() {
                 </div>
               )}
 
+              {/* Cancel request */}
+              {['New request','Scheduled'].includes(selected.status) && (
+                <button onClick={async () => {
+                  if (!confirm('Cancel request ' + selected.request_no + '?')) return
+                  await supabase.from('requests').update({ status: 'Cancelled' }).eq('id', selected.id)
+                  await load()
+                  setSelected(prev => ({...prev, status: 'Cancelled'}))
+                }} className="w-full text-xs text-red-500 border border-red-200 rounded-lg py-2 hover:bg-red-50">
+                  ✕ Cancel this request
+                </button>
+              )}
+
               {/* Audit trail */}
               {selected.status_history?.length > 0 && (
                 <div className="card">

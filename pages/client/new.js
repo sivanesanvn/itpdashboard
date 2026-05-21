@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
-import { supabase, NDT_METHODS, JOB_CATEGORIES } from '../../lib/supabase'
+import { supabase, JOB_CATEGORIES } from '../../lib/supabase'
+import MethodSelect from '../../components/MethodSelect'
 import Layout from '../../components/Layout'
 
 const NAV = [
@@ -184,10 +185,7 @@ export default function ClientNew() {
             <div className="card mb-4">
               <div className="section-title">🔍 NDT scope</div>
               <label className="label">NDT method required *</label>
-              <select className="input" value={s1.ndt_method} onChange={e => setS1(p => ({...p, ndt_method: e.target.value}))}>
-                <option value="">Select method…</option>
-                {NDT_METHODS.map(m => <option key={m}>{m}</option>)}
-              </select>
+              <MethodSelect value={s1.ndt_method} onChange={v => setS1(p => ({...p, ndt_method: v}))} />
               <label className="label">Estimated quantity</label>
               <input className="input" placeholder="e.g. 50 weld joints, 200 m²"
                 value={s1.scope_qty} onChange={e => setS1(p => ({...p, scope_qty: e.target.value}))} />
