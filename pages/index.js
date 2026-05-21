@@ -1,4 +1,4 @@
-import { useState  } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
 
@@ -41,9 +41,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col" style={{background: 'linear-gradient(135deg, #0C447C 0%, #185FA5 50%, #1a7ab8 100%)'}}>
       {/* Top bar with logo */}
       <div className="flex items-center justify-between px-6 py-4">
-        <div style={{background:'white',borderRadius:'8px',padding:'4px 10px',display:'inline-flex',alignItems:'center'}}>
-          <img src="/cutech_logo.png" alt="Cutech" style={{height:'36px',width:'auto',display:'block'}} />
-        </div>
+        <img src="/cutech_logo.png" alt="Cutech" style={{height:'36px',width:'auto',display:'block'}} />
         <span className="text-white/60 text-xs">Singapore · Inspection Management System</span>
       </div>
 
@@ -52,9 +50,7 @@ export default function LoginPage() {
           {/* Hero */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-4">
-              <div style={{background:'white',borderRadius:'12px',padding:'8px 16px',display:'inline-flex',alignItems:'center',boxShadow:'0 2px 8px rgba(0,0,0,0.15)'}}>
-            <img src="/cutech_logo.png" alt="Cutech" style={{height:'40px',width:'auto',display:'block'}} />
-          </div>
+              <img src="/cutech_logo.png" alt="Cutech" style={{height:'44px',width:'auto',display:'block'}} />
             </div>
             <h1 className="text-3xl font-bold text-white">NDT Portal</h1>
             <p className="text-blue-200 text-sm mt-1">Complete Inspection Management System</p>
@@ -99,9 +95,7 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="text-center mt-6">
-            <div style={{background:'white',borderRadius:'6px',padding:'3px 10px',display:'inline-flex',alignItems:'center',opacity:0.7}}>
-            <img src="/cutech_logo.png" alt="Cutech" style={{height:'18px',width:'auto',display:'block'}} />
-          </div>
+            <img src="/cutech_logo.png" alt="Cutech" style={{height:'20px',width:'auto',opacity:0.6}} />
             <p className="text-blue-300/60 text-xs mt-1">© {new Date().getFullYear()} Cutech · Complete Solution Provider</p>
           </div>
         </div>

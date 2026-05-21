@@ -61,10 +61,7 @@ export default function Layout({ profile, nav = [], children }) {
       <header className="bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
         <div className="flex items-center gap-3 px-4 py-2">
           {/* Logo in white container — no black background */}
-          <div className="flex items-center flex-shrink-0"
-            style={{background:'white',borderRadius:'6px',padding:'3px 8px',border:'1px solid #e5e7eb'}}>
-            <img src="/cutech_logo.png" alt="Cutech" style={{height:'28px',width:'auto',display:'block'}} />
-          </div>
+          <img src="/cutech_logo.png" alt="Cutech" style={{height:'32px',width:'auto',display:'block'}} />
 
           <div className="ml-auto flex items-center gap-2">
             {profile && (
@@ -120,9 +117,7 @@ export default function Layout({ profile, nav = [], children }) {
 
       <footer className="border-t border-gray-100 bg-white py-2 px-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div style={{background:'white',borderRadius:'4px',padding:'2px 6px',border:'1px solid #e5e7eb',display:'inline-flex'}}>
-            <img src="/cutech_logo.png" alt="Cutech" style={{height:'16px',width:'auto'}} />
-          </div>
+          <img src="/cutech_logo.png" alt="Cutech" style={{height:'20px',width:'auto'}} />
           <span className="text-xs text-gray-400">NDT Portal · Singapore</span>
         </div>
         <span className="text-xs text-gray-300">© {new Date().getFullYear()} Cutech</span>
