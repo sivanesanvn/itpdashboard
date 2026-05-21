@@ -197,6 +197,7 @@ function generatePrintHTML(r, si) {
       <div class="section-title">Client & site</div>
       <table><tbody>
         ${row('Company', r.company)}
+        ${row('Requested by', r.requested_by_name)}
         ${row('Contact', r.contact_name)}
         ${row('Phone', r.contact_phone)}
         ${row('Location', r.location)}
@@ -210,7 +211,6 @@ function generatePrintHTML(r, si) {
         ${row('Date needed', r.date_needed)}
         ${row('Priority', r.priority)}
         ${row('Scheduled date', r.scheduled_date)}
-        ${row('Technician', r.tech_name)}
       </tbody></table>
     </div>
   </div>

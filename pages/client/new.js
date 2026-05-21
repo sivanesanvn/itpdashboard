@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
-import { supabase, NDT_METHODS } from '../../lib/supabase'
+import { supabase, NDT_METHODS, JOB_CATEGORIES } from '../../lib/supabase'
 import Layout from '../../components/Layout'
 
 const NAV = [
@@ -81,6 +81,7 @@ export default function ClientNew() {
       needs_scaffold:    s1.needs_scaffold,
       needs_insulation:  s1.needs_insulation,
       needs_painting:    s1.needs_painting,
+      job_category:      s1.job_category,
       step2_complete:    false,
     }).select().single()
     if (error) { setSaving(false); alert('Error submitting: ' + error.message); return }
@@ -151,6 +152,18 @@ export default function ClientNew() {
               <label className="label">Site / plant location / unit number *</label>
               <input className="input" placeholder="e.g. Tuas Shipyard, Berth 7 / Unit 3"
                 value={s1.location} onChange={e => setS1(p => ({...p, location: e.target.value}))} />
+              <label className="label">Job category *</label>
+              <div className="grid grid-cols-3 gap-2 mb-1">
+                {JOB_CATEGORIES.map(cat => (
+                  <label key={cat} className={`flex items-center justify-center gap-2 cursor-pointer p-2.5 rounded-lg border-2 transition-colors text-sm font-medium
+                    ${s1.job_category === cat ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                    <input type="radio" name="category" value={cat} checked={s1.job_category === cat}
+                      onChange={() => setS1(p => ({...p, job_category: cat}))} className="hidden" />
+                    {cat === 'Meridium' ? '🔄' : cat === 'Turn Around' ? '⚙️' : '📋'} {cat}
+                  </label>
+                ))}
+              </div>
+
               <label className="label">Equipment / piping number</label>
               <input className="input" placeholder="e.g. V-1201, P-4401A, L-101-3&quot;-CS-1A"
                 value={s1.equipment_no} onChange={e => setS1(p => ({...p, equipment_no: e.target.value}))} />

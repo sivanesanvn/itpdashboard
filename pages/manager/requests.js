@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
-import { supabase, NDT_STATUSES, PRIORITY_COLOR } from '../../lib/supabase'
+import { supabase, NDT_STATUSES, PRIORITY_COLOR, STATUS_COLOR, JOB_CATEGORIES } from '../../lib/supabase'
 import Layout from '../../components/Layout'
 import { StatusBadge, NDTTimeline, SupportJobBadge } from '../../components/StatusBadge'
 import DocumentUpload from '../../components/DocumentUpload'
@@ -91,26 +91,22 @@ export default function ManagerRequests() {
 
       <div className="space-y-2">
         {filtered.map(r => (
-          <div key={r.id} className="card cursor-pointer hover:shadow-md transition-shadow" onClick={() => openRequest(r)}>
-            <div className="flex items-start gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-sm text-blue-700">{r.request_no}</span>
-                  <span className="font-medium text-sm">{r.company}</span>
-                  <StatusBadge status={r.status} />
-                  {r.priority !== 'Normal' && <span className={`badge ${PRIORITY_COLOR[r.priority]}`}>{r.priority}</span>}
-                  {!r.step2_complete && <span className="badge bg-amber-100 text-amber-700">⚠ Details pending</span>}
-                </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  {r.ndt_method} · {r.location} · {r.date_needed}{r.tech_name ? ` · 👷 ${r.tech_name}` : ''}
-                </div>
-                {r.support_jobs?.length > 0 && (
-                  <div className="flex gap-2 mt-1.5 flex-wrap">
-                    {r.support_jobs.map(sj => <SupportJobBadge key={sj.id} job={sj} />)}
-                  </div>
-                )}
-              </div>
-              <span className="text-gray-300 text-lg">›</span>
+          <div key={r.id}
+            className="bg-white border border-gray-100 rounded-lg px-3 py-2 cursor-pointer hover:shadow-sm hover:border-blue-200 transition-all"
+            onClick={() => openRequest(r)}>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-xs text-blue-700 w-16 shrink-0">{r.request_no}</span>
+              <span className="text-xs font-medium truncate max-w-[120px]">{r.company}</span>
+              <span className="text-xs text-gray-400 truncate flex-1">{r.ndt_method}</span>
+              <StatusBadge status={r.status} />
+              {r.job_category && <span className="badge bg-gray-100 text-gray-600 text-xs">{r.job_category}</span>}
+              {r.priority !== 'Normal' && <span className={`badge ${PRIORITY_COLOR[r.priority]} text-xs`}>{r.priority}</span>}
+              {!r.step2_complete && <span className="badge bg-amber-100 text-amber-700 text-xs">⚠ Details</span>}
+              <span className="text-xs text-gray-400 shrink-0">{r.date_needed}</span>
+            </div>
+            <div className="text-xs text-gray-400 mt-0.5 truncate">
+              {r.location}{r.equipment_no ? ` · ${r.equipment_no}` : ''}{r.tech_name ? ` · 👷 ${r.tech_name}` : ''}
+              {r.support_jobs?.length > 0 && ` · ${r.support_jobs.map(s=>s.job_type).join(', ')}`}
             </div>
           </div>
         ))}
@@ -148,6 +144,7 @@ export default function ManagerRequests() {
               <div className="card text-sm space-y-1.5">
                 <div className="section-title">Site & scope</div>
                 {[
+                  ['Category', selected.job_category],
                   ['Location', selected.location],
                   ['Contact', selected.contact_name],
                   ['Phone', selected.contact_phone],
