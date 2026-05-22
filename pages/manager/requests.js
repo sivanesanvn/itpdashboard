@@ -18,6 +18,10 @@ export default function ManagerRequests() {
   const [profile, setProfile] = useState(null)
   const [requests, setRequests] = useState([])
   const [filter, setFilter] = useState('All')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [requestedBy, setRequestedBy] = useState('')
+  const [showDateFilter, setShowDateFilter] = useState(false)
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState(null)
   const [docs, setDocs] = useState([])
@@ -64,9 +68,12 @@ export default function ManagerRequests() {
 
   const filtered = requests.filter(r => {
     const matchStatus = filter === 'All' || r.status === filter
-    const matchSearch = !search || [r.request_no, r.company, r.location, r.ndt_method]
-      .join(' ').toLowerCase().includes(search.toLowerCase())
-    return matchStatus && matchSearch
+    const matchSearch = !search || [r.request_no, r.company, r.location, r.ndt_method, r.requested_by_name, r.equipment_no]
+      .filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase())
+    const matchRequestedBy = !requestedBy || (r.requested_by_name || '').toLowerCase().includes(requestedBy.toLowerCase())
+    const matchDateFrom = !dateFrom || r.created_at?.slice(0,10) >= dateFrom
+    const matchDateTo = !dateTo || r.created_at?.slice(0,10) <= dateTo
+    return matchStatus && matchSearch && matchRequestedBy && matchDateFrom && matchDateTo
   })
 
   const newCount = requests.filter(r => r.status === 'New request').length
@@ -75,8 +82,23 @@ export default function ManagerRequests() {
     <Layout profile={profile} nav={MANAGER_NAV(newCount)}>
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h1 className="text-xl font-bold">All Requests</h1>
-        <input className="input w-64 text-sm" placeholder="Search by ID, company, method…"
-          value={search} onChange={e => setSearch(e.target.value)} />
+        <div className="flex gap-2 flex-wrap items-center">
+          <div className="relative">
+            <input className="input w-56 text-sm pl-8" placeholder="Search ID, company, method, requestor…"
+              value={search} onChange={e => setSearch(e.target.value)} />
+            <span className="absolute left-2.5 top-2.5 text-gray-400 text-sm">🔍</span>
+          </div>
+          <input className="input text-xs py-1 w-32" placeholder="Requestor name"
+            value={requestedBy} onChange={e => setRequestedBy(e.target.value)} />
+          <input className="input text-xs py-1 w-32" type="date" placeholder="From"
+            value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+          <input className="input text-xs py-1 w-32" type="date" placeholder="To"
+            value={dateTo} onChange={e => setDateTo(e.target.value)} />
+          {(requestedBy||dateFrom||dateTo) && (
+            <button onClick={() => { setRequestedBy(''); setDateFrom(''); setDateTo('') }}
+              className="text-xs text-blue-600">Clear</button>
+          )}
+        </div>
       </div>
 
       <div className="flex gap-2 flex-wrap mb-4">
@@ -94,14 +116,13 @@ export default function ManagerRequests() {
           <div key={r.id}
             className="bg-white border border-gray-100 rounded-lg px-3 py-2 cursor-pointer hover:shadow-sm hover:border-blue-200 transition-all"
             onClick={() => openRequest(r)}>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
               <span className="font-semibold text-xs text-blue-700 w-16 shrink-0">{r.request_no}</span>
-              <span className="text-xs font-medium truncate max-w-[120px]">{r.company}</span>
-              <span className="text-xs text-gray-400 truncate flex-1">{r.ndt_method}</span>
+              <span className="text-xs truncate w-36">{r.ndt_method}</span>
+              <span className="text-xs text-gray-500 truncate flex-1">👤 {r.requested_by_name || r.company}</span>
               <StatusBadge status={r.status} />
               {r.job_category && <span className="badge bg-gray-100 text-gray-600 text-xs">{r.job_category}</span>}
-              {r.priority !== 'Normal' && <span className={`badge ${PRIORITY_COLOR[r.priority]} text-xs`}>{r.priority}</span>}
-              {!r.step2_complete && <span className="badge bg-amber-100 text-amber-700 text-xs">⚠ Details</span>}
+              {!r.step2_complete && <span className="badge bg-amber-100 text-amber-700 text-xs">⚠</span>}
               <span className="text-xs text-gray-400 shrink-0">{r.date_needed}</span>
             </div>
             <div className="text-xs text-gray-400 mt-0.5 truncate">

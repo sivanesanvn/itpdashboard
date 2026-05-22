@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 
 const ROLE_ROUTES = {
   manager:    '/manager/dashboard',
+  coordinator: '/coordinator/dashboard',
   client:     '/client/requests',
   tech:       '/tech/jobs',
   scaffold:   '/contractor/jobs',
