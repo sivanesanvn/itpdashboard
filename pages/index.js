@@ -29,31 +29,16 @@ export default function LoginPage() {
     router.push(ROLE_ROUTES[profile.role] || '/')
   }
 
-  const roles = [
-    { icon: '🏢', label: 'NDT Manager',           desc: 'Full access · schedule · reports' },
-    { icon: '🏭', label: 'Client',                 desc: 'Submit requests · track progress' },
-    { icon: '🔧', label: 'NDT Technician',         desc: 'Assigned jobs · site updates' },
-    { icon: '🏗️',  label: 'Scaffold Contractor',   desc: 'Erection · ready · dismantling' },
-    { icon: '🧱', label: 'Insulation Contractor',  desc: 'Removal status updates' },
-    { icon: '🎨', label: 'Painting Contractor',    desc: 'Painting job status updates' },
-  ]
-
   return (
     <div className="min-h-screen flex flex-col" style={{background: 'linear-gradient(135deg, #0C447C 0%, #185FA5 50%, #1a7ab8 100%)'}}>
-      {/* Top bar with logo */}
-      <div className="flex items-center justify-between px-6 py-4">
-        <img src="/cutech_logo.png" alt="Cutech" style={{height:'36px',width:'auto',display:'block'}} />
-        <span className="text-white/60 text-xs">Singapore · Inspection Management System</span>
-      </div>
-
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-lg">
           {/* Hero */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-4">
-              <img src="/cutech_logo.png" alt="Cutech" style={{height:'44px',width:'auto',display:'block'}} />
+            <div className="inline-flex items-center justify-center bg-white rounded-2xl shadow-lg mb-4 px-3 py-2">
+              <img src="/cutech_logo.png" alt="Cutech" style={{height:'36px',width:'auto',display:'block'}} />
             </div>
-            <h1 className="text-3xl font-bold text-white">NDT Portal</h1>
+            <h1 className="text-3xl font-bold text-white">NDT & Inspection Request Portal</h1>
             <p className="text-blue-200 text-sm mt-1">Complete Inspection Management System</p>
           </div>
 
@@ -81,17 +66,6 @@ export default function LoginPage() {
             <p className="text-xs text-gray-400 text-center mt-4">
               Access is by invitation. Contact Cutech NDT to get your credentials.
             </p>
-          </div>
-
-          {/* Role cards */}
-          <div className="grid grid-cols-3 gap-2">
-            {roles.map(r => (
-              <div key={r.label} className="bg-white/10 backdrop-blur rounded-xl p-3">
-                <div className="text-xl mb-1">{r.icon}</div>
-                <div className="text-white text-xs font-semibold leading-tight">{r.label}</div>
-                <div className="text-blue-200 text-xs mt-1 leading-tight">{r.desc}</div>
-              </div>
-            ))}
           </div>
 
           {/* Footer */}
