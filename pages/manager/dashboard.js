@@ -85,7 +85,6 @@ export default function ManagerDashboard() {
     { href: '/manager/dashboard', label: 'Dashboard', icon: '📊', badge: newCount },
     { href: '/manager/requests',  label: 'All Requests', icon: '📋' },
     { href: '/manager/schedule',  label: 'Schedule', icon: '📅' },
-    { href: '/manager/team',      label: 'Team', icon: '👥' },
   ]
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Loading…</div>

@@ -10,7 +10,6 @@ const MANAGER_NAV = (badge) => [
   { href: '/manager/dashboard', label: 'Dashboard', icon: '📊', badge },
   { href: '/manager/requests',  label: 'All Requests', icon: '📋' },
   { href: '/manager/schedule',  label: 'Schedule', icon: '📅' },
-  { href: '/manager/team',      label: 'Team', icon: '👥' },
 ]
 
 export default function ManagerRequests() {
