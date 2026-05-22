@@ -22,6 +22,7 @@ export default function ClientNew() {
     ndt_method: '', scope_qty: '', attachments: [], description: '',
     date_needed: '', priority: 'Normal',
     needs_scaffold: false, needs_insulation: false, needs_painting: false,
+    requester_position: '', requester_department: '',
   })
 
   const [s2, setS2] = useState({
@@ -37,6 +38,11 @@ export default function ClientNew() {
     const { data: p } = await supabase.from('profiles').select('*').eq('id', u.id).single()
     if (!p || !['client','manager'].includes(p.role)) { router.push('/'); return }
     setProfile(p); setUser(u)
+    setS1(prev => ({
+      ...prev,
+      requester_position:   p.position   || '',
+      requester_department: p.department || '',
+    }))
     if (router.query.step2) {
       const { data: r } = await supabase.from('requests').select('*').eq('id', router.query.step2).single()
       if (r) { setDraftId(r.id); setStep(2) }
@@ -64,6 +70,12 @@ export default function ClientNew() {
       alert('Please fill in: location, NDT method, and date needed.'); return
     }
     setSaving(true)
+    if (s1.requester_position || s1.requester_department) {
+      await supabase.from('profiles').update({
+        position:   s1.requester_position   || null,
+        department: s1.requester_department || null,
+      }).eq('id', user.id)
+    }
     const { data, error } = await supabase.from('requests').insert({
       client_id:         user.id,
       company:           profile.company || profile.full_name,
@@ -79,12 +91,14 @@ export default function ClientNew() {
       description:       s1.description,
       date_needed:       s1.date_needed,
       priority:          s1.priority,
-      needs_scaffold:    s1.needs_scaffold,
-      needs_insulation:  s1.needs_insulation,
-      needs_painting:    s1.needs_painting,
-      job_category:      s1.job_category,
-      high_temp:         s1.high_temp,
-      step2_complete:    false,
+      needs_scaffold:       s1.needs_scaffold,
+      needs_insulation:     s1.needs_insulation,
+      needs_painting:       s1.needs_painting,
+      job_category:         s1.job_category,
+      high_temp:            s1.high_temp,
+      requester_position:   s1.requester_position,
+      requester_department: s1.requester_department,
+      step2_complete:       false,
     }).select().single()
     if (error) { setSaving(false); alert('Error submitting: ' + error.message); return }
     await uploadAttachments(data.id)
@@ -134,11 +148,11 @@ export default function ClientNew() {
           <>
             <h1 className="text-xl font-bold mb-5">New NDT Request</h1>
 
-            {/* Requested by — auto filled */}
+            {/* Requested by */}
             <div className="card mb-4">
               <div className="section-title">👤 Requested by</div>
-              <div className="flex items-center gap-3 p-2.5 bg-blue-50 rounded-lg border border-blue-100">
-                <div className="w-8 h-8 rounded-full bg-blue-700 text-white flex items-center justify-center text-xs font-bold">
+              <div className="flex items-center gap-3 p-2.5 bg-blue-50 rounded-lg border border-blue-100 mb-3">
+                <div className="w-8 h-8 rounded-full bg-blue-700 text-white flex items-center justify-center text-xs font-bold shrink-0">
                   {profile.full_name?.slice(0,1)}
                 </div>
                 <div>
@@ -146,6 +160,20 @@ export default function ClientNew() {
                   <div className="text-xs text-gray-400">{profile.company || profile.email}</div>
                 </div>
                 <span className="ml-auto text-xs text-blue-600 font-medium">Auto-filled</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">Your position / designation</label>
+                  <input className="input" placeholder="e.g. Inspection Engineer"
+                    value={s1.requester_position}
+                    onChange={e => setS1(p => ({...p, requester_position: e.target.value}))} />
+                </div>
+                <div>
+                  <label className="label">Department</label>
+                  <input className="input" placeholder="e.g. Maintenance, Operations"
+                    value={s1.requester_department}
+                    onChange={e => setS1(p => ({...p, requester_department: e.target.value}))} />
+                </div>
               </div>
             </div>
 

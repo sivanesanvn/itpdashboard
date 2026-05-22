@@ -5,6 +5,7 @@ import Layout from '../../components/Layout'
 import { StatusBadge, NDTTimeline, SupportJobBadge } from '../../components/StatusBadge'
 import DocumentUpload from '../../components/DocumentUpload'
 import PrintRequest from '../../components/PrintRequest'
+import RequestComments from '../../components/RequestComments'
 
 const MANAGER_NAV = (badge) => [
   { href: '/manager/dashboard', label: 'Dashboard', icon: '📊', badge },
@@ -259,6 +260,9 @@ export default function ManagerRequests() {
                   ))}
                 </div>
               )}
+
+              {/* Comments */}
+              <RequestComments requestId={selected.id} profile={profile} />
 
               {/* Cancel request */}
               {['New request','Scheduled'].includes(selected.status) && (

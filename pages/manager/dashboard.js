@@ -76,13 +76,23 @@ export default function ManagerDashboard() {
     setModal(null)
   }
 
-  const newCount     = requests.filter(r => r.status === 'New request').length
-  const activeCount  = requests.filter(r => ['Scheduled','On-going'].includes(r.status)).length
-  const doneCount    = requests.filter(r => ['Site work completed','Report submitted','Report accepted'].includes(r.status)).length
-  const pendingDetail = requests.filter(r => !r.step2_complete && r.status === 'New request')
+  const [period, setPeriod] = useState('Overall')
+
+  const now = new Date()
+  const periodRequests = requests.filter(r => {
+    if (period === 'Overall') return true
+    const d = new Date(r.created_at)
+    if (period === 'Monthly') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+    return d.getFullYear() === now.getFullYear()
+  })
+
+  const newBadge    = requests.filter(r => r.status === 'New request').length
+  const newCount    = periodRequests.filter(r => r.status === 'New request').length
+  const activeCount = periodRequests.filter(r => ['Scheduled','Site Work On-going'].includes(r.status)).length
+  const doneCount   = periodRequests.filter(r => ['Site work completed','Draft Report Submitted','Draft Report Accepted','Report accepted'].includes(r.status)).length
 
   const nav = [
-    { href: '/manager/dashboard', label: 'Dashboard', icon: '📊', badge: newCount },
+    { href: '/manager/dashboard', label: 'Dashboard', icon: '📊', badge: newBadge },
     { href: '/manager/requests',  label: 'All Requests', icon: '📋' },
     { href: '/manager/schedule',  label: 'Schedule', icon: '📅' },
   ]
@@ -91,15 +101,26 @@ export default function ManagerDashboard() {
 
   return (
     <Layout profile={profile} nav={nav}>
-      <h1 className="text-xl font-bold mb-5">Dashboard</h1>
+      <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+        <h1 className="text-xl font-bold">Dashboard</h1>
+        <div className="flex gap-1">
+          {['Monthly','Yearly','Overall'].map(p => (
+            <button key={p} onClick={() => setPeriod(p)}
+              className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors
+                ${period === p ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
+              {p}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
-          { label: 'New requests', value: newCount, color: 'text-blue-700', bg: 'bg-blue-50' },
-          { label: 'Active jobs',  value: activeCount, color: 'text-amber-700', bg: 'bg-amber-50' },
-          { label: 'Completed',    value: doneCount, color: 'text-emerald-700', bg: 'bg-emerald-50' },
-          { label: 'Total',        value: requests.length, color: 'text-gray-700', bg: 'bg-gray-50' },
+          { label: 'New requests', value: newCount,           color: 'text-blue-700',    bg: 'bg-blue-50' },
+          { label: 'Active jobs',  value: activeCount,        color: 'text-amber-700',   bg: 'bg-amber-50' },
+          { label: 'Completed',    value: doneCount,          color: 'text-emerald-700', bg: 'bg-emerald-50' },
+          { label: 'Total',        value: periodRequests.length, color: 'text-gray-700', bg: 'bg-gray-50' },
         ].map(s => (
           <div key={s.label} className={`card ${s.bg} border-0`}>
             <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>

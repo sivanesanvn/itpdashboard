@@ -5,6 +5,7 @@ import Layout from '../../components/Layout'
 import { StatusBadge, NDTTimeline } from '../../components/StatusBadge'
 import DocumentUpload from '../../components/DocumentUpload'
 import PrintRequest from '../../components/PrintRequest'
+import RequestComments from '../../components/RequestComments'
 
 const TECH_NEXT = {
   'Scheduled':           'On-going',
@@ -242,6 +243,8 @@ export default function TechJobs() {
                   }}
                 />
               </div>
+
+              <RequestComments requestId={selected.id} profile={profile} />
 
               {/* NDT Report upload */}
               <div className="card">

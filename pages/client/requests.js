@@ -5,6 +5,7 @@ import Layout from '../../components/Layout'
 import { StatusBadge, NDTTimeline, SupportJobBadge } from '../../components/StatusBadge'
 import DocumentUpload from '../../components/DocumentUpload'
 import PrintRequest from '../../components/PrintRequest'
+import RequestComments from '../../components/RequestComments'
 
 const ACTIVE_STATUSES = NDT_STATUSES.filter(s => !['Report accepted','Cancelled'].includes(s))
 
@@ -402,6 +403,8 @@ export default function ClientRequests() {
                   </div>
                 ))}
               </div>
+
+              <RequestComments requestId={selected.id} profile={profile} />
 
               {selected.status_history?.length > 0 && (
                 <div className="card text-xs">
