@@ -83,6 +83,7 @@ export default function ClientNew() {
       needs_insulation:  s1.needs_insulation,
       needs_painting:    s1.needs_painting,
       job_category:      s1.job_category,
+      high_temp:         s1.high_temp,
       step2_complete:    false,
     }).select().single()
     if (error) { setSaving(false); alert('Error submitting: ' + error.message); return }
@@ -216,6 +217,16 @@ export default function ClientNew() {
               <label className="label">Description of scope</label>
               <textarea className="input" rows={3} placeholder="What needs to be inspected? Any access conditions or hazards?"
                 value={s1.description} onChange={e => setS1(p => ({...p, description: e.target.value}))} />
+              <label className={`flex items-center gap-3 cursor-pointer mt-2 p-3 rounded-lg border-2 transition-colors
+                ${s1.high_temp ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-red-300'}`}>
+                <input type="checkbox" checked={s1.high_temp}
+                  onChange={e => setS1(p => ({...p, high_temp: e.target.checked}))}
+                  className="w-4 h-4 rounded accent-red-600" />
+                <div>
+                  <div className="text-sm font-medium text-red-700">🌡️ High temperature job (above 50°C)</div>
+                  <div className="text-xs text-gray-400">Tick if the inspection area involves high temperature surfaces</div>
+                </div>
+              </label>
             </div>
 
             <div className="card mb-4">

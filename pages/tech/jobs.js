@@ -122,6 +122,7 @@ export default function TechJobs() {
 
                 <div className="mt-3 pt-3 border-t border-gray-50 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                   {[
+['Requested by', r.requested_by_name],
                     ['Material', r.material],
                     ['Thickness', r.thickness_mm ? r.thickness_mm + ' mm' : null],
                     ['Code', r.code_standard],
@@ -211,6 +212,7 @@ export default function TechJobs() {
                 <div className="section-title">Job details</div>
                 {[
                   ['Company', selected.company],
+                  ['Requested by', selected.requested_by_name],
                   ['Location', selected.location],
                   ['Method', selected.ndt_method],
                   ['Material', selected.material],

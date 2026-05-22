@@ -119,7 +119,7 @@ export default function ManagerRequests() {
             <div className="flex items-center gap-2">
               <span className="font-semibold text-xs text-blue-700 w-16 shrink-0">{r.request_no}</span>
               <span className="text-xs truncate w-36">{r.ndt_method}</span>
-              <span className="text-xs text-gray-500 truncate flex-1">👤 {r.requested_by_name || r.company}</span>
+              <span className="text-xs text-gray-500 truncate flex-1">{r.requested_by_name || r.company}</span>
               <StatusBadge status={r.status} />
               {r.job_category && <span className="badge bg-gray-100 text-gray-600 text-xs">{r.job_category}</span>}
               {!r.step2_complete && <span className="badge bg-amber-100 text-amber-700 text-xs">⚠</span>}
@@ -165,6 +165,7 @@ export default function ManagerRequests() {
               <div className="card text-sm space-y-1.5">
                 <div className="section-title">Site & scope</div>
                 {[
+                  ['Requested by', selected.requested_by_name],
                   ['Category', selected.job_category],
                   ['Location', selected.location],
                   ['Contact', selected.contact_name],
