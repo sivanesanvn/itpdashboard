@@ -22,7 +22,7 @@ export default function ClientNew() {
     ndt_method: '', scope_qty: '', attachments: [], description: '',
     date_needed: '', priority: 'Normal',
     needs_scaffold: false, needs_insulation: false, needs_painting: false,
-    requester_position: '', requester_department: '',
+    requester_name: '', requester_position: '', requester_department: '',
   })
 
   const [s2, setS2] = useState({
@@ -40,6 +40,7 @@ export default function ClientNew() {
     setProfile(p); setUser(u)
     setS1(prev => ({
       ...prev,
+      requester_name:       p.full_name  || '',
       requester_position:   p.position   || '',
       requester_department: p.department || '',
     }))
@@ -85,7 +86,7 @@ export default function ClientNew() {
       contact_phone:     s1.contact_phone,
       contact_email:     s1.contact_email,
       requested_by_id:   user.id,
-      requested_by_name: profile.full_name,
+      requested_by_name: s1.requester_name || profile.full_name,
       ndt_method:        s1.ndt_method,
       scope_qty:         s1.scope_qty,
       description:       s1.description,
@@ -150,20 +151,19 @@ export default function ClientNew() {
 
             {/* Requested by */}
             <div className="card mb-4">
-              <div className="section-title">👤 Requested by</div>
-              <div className="flex items-center gap-3 p-2.5 bg-blue-50 rounded-lg border border-blue-100 mb-3">
-                <div className="w-8 h-8 rounded-full bg-blue-700 text-white flex items-center justify-center text-xs font-bold shrink-0">
-                  {profile.full_name?.slice(0,1)}
-                </div>
-                <div>
-                  <div className="text-sm font-medium">{profile.full_name}</div>
-                  <div className="text-xs text-gray-400">{profile.company || profile.email}</div>
-                </div>
-                <span className="ml-auto text-xs text-blue-600 font-medium">Auto-filled</span>
+              <div className="flex items-center justify-between mb-3">
+                <div className="section-title mb-0">👤 Requested by</div>
+                <span className="text-xs text-blue-600 font-medium">Auto-filled</span>
+              </div>
+              <div className="mb-3">
+                <label className="label">Full name</label>
+                <input className="input" placeholder="Your full name"
+                  value={s1.requester_name}
+                  onChange={e => setS1(p => ({...p, requester_name: e.target.value}))} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="label">Your position / designation</label>
+                  <label className="label">Position / designation</label>
                   <input className="input" placeholder="e.g. Inspection Engineer"
                     value={s1.requester_position}
                     onChange={e => setS1(p => ({...p, requester_position: e.target.value}))} />

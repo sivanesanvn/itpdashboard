@@ -55,9 +55,9 @@ export default function PrintRequest({ request: r, onClose }) {
               {/* Client & Site */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Client</div>
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Requestor & Client</div>
                   <table className="w-full text-xs">
-                    {[['Company',r.company],['Contact',r.contact_name],['Phone',r.contact_phone],['Location',r.location],['Equipment',r.equipment_no]].map(([k,v])=>v&&(
+                    {[['Requested by',r.requested_by_name],['Position',r.requester_position],['Department',r.requester_department],['Company',r.company],['Contact',r.contact_name],['Phone',r.contact_phone],['Location',r.location],['Equipment',r.equipment_no]].map(([k,v])=>v&&(
                       <tr key={k}><td className="text-gray-400 pr-2 py-0.5 w-24">{k}</td><td className="font-medium">{v}</td></tr>
                     ))}
                   </table>
@@ -65,7 +65,7 @@ export default function PrintRequest({ request: r, onClose }) {
                 <div>
                   <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Scheduling</div>
                   <table className="w-full text-xs">
-                    {[['Requested by',r.requested_by_name],['Date needed',r.date_needed],['Priority',r.priority],['Scheduled',r.scheduled_date],['Technician',r.tech_name]].map(([k,v])=>v&&(
+                    {[['Date needed',r.date_needed],['Priority',r.priority],['Scheduled',r.scheduled_date],['Technician',r.tech_name]].map(([k,v])=>v&&(
                       <tr key={k}><td className="text-gray-400 pr-2 py-0.5 w-24">{k}</td><td className="font-medium">{v}</td></tr>
                     ))}
                   </table>
@@ -194,15 +194,16 @@ function generatePrintHTML(r, si) {
 
   <div class="grid2">
     <div>
-      <div class="section-title">Client & site</div>
+      <div class="section-title">Requestor & client</div>
       <table><tbody>
-        ${row('Company', r.company)}
         ${row('Requested by', r.requested_by_name)}
+        ${row('Position', r.requester_position)}
+        ${row('Department', r.requester_department)}
+        ${row('Company', r.company)}
         ${row('Contact', r.contact_name)}
         ${row('Phone', r.contact_phone)}
         ${row('Location', r.location)}
         ${row('Equipment/Piping', r.equipment_no)}
-        ${row('Requested by', r.requested_by_name)}
       </tbody></table>
     </div>
     <div>
