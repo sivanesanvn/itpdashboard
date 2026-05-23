@@ -43,7 +43,6 @@ function PasswordModal({ onClose }) {
             <button type="button" onClick={onClose} className="btn btn-ghost text-sm">Cancel</button>
           </div>
         </form>
-        <p className="text-xs text-gray-400 mt-3 text-center">Need a reset? Contact your NDT Manager.</p>
       </div>
     </div>
   )
