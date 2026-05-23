@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
 
@@ -20,6 +20,13 @@ export default function LoginPage() {
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
   const [resetSent, setResetSent] = useState(false)
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') router.push('/auth/reset-password')
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   async function handleLogin(e) {
     e.preventDefault()
