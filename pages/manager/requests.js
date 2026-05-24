@@ -20,8 +20,9 @@ export default function ManagerRequests() {
   const [filter, setFilter] = useState('All')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
-  const [showDateFilter, setShowDateFilter] = useState(false)
   const [search, setSearch] = useState('')
+  const [filterLocation, setFilterLocation] = useState('')
+  const [filterCategory, setFilterCategory] = useState('')
   const [selected, setSelected] = useState(null)
   const [docs, setDocs] = useState([])
   const [printing, setPrinting] = useState(false)
@@ -65,13 +66,17 @@ export default function ManagerRequests() {
     setSelected(prev => prev ? { ...prev, status } : null)
   }
 
+  const locations = [...new Set(requests.map(r => r.location).filter(Boolean))].sort()
+
   const filtered = requests.filter(r => {
-    const matchStatus = filter === 'All' || r.status === filter
-    const matchSearch = !search || [r.request_no, r.company, r.location, r.ndt_method, r.requested_by_name, r.equipment_no]
+    const matchStatus   = filter === 'All' || r.status === filter
+    const matchSearch   = !search || [r.request_no, r.company, r.location, r.ndt_method, r.requested_by_name, r.equipment_no]
       .filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase())
     const matchDateFrom = !dateFrom || r.created_at?.slice(0,10) >= dateFrom
-    const matchDateTo = !dateTo || r.created_at?.slice(0,10) <= dateTo
-    return matchStatus && matchSearch && matchDateFrom && matchDateTo
+    const matchDateTo   = !dateTo   || r.created_at?.slice(0,10) <= dateTo
+    const matchLocation = !filterLocation || r.location === filterLocation
+    const matchCategory = !filterCategory || r.job_category === filterCategory
+    return matchStatus && matchSearch && matchDateFrom && matchDateTo && matchLocation && matchCategory
   })
 
   const newCount = requests.filter(r => r.status === 'New request').length
@@ -86,13 +91,21 @@ export default function ManagerRequests() {
               value={search} onChange={e => setSearch(e.target.value)} />
             <span className="absolute left-2.5 top-2.5 text-gray-400 text-sm">🔍</span>
           </div>
-          <input className="input text-xs py-1 w-32" type="date" placeholder="From"
+          <select className="input text-xs py-1 w-40" value={filterLocation} onChange={e => setFilterLocation(e.target.value)}>
+            <option value="">All locations</option>
+            {locations.map(l => <option key={l} value={l}>{l}</option>)}
+          </select>
+          <select className="input text-xs py-1 w-36" value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
+            <option value="">All categories</option>
+            {JOB_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <input className="input text-xs py-1 w-32" type="date"
             value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
-          <input className="input text-xs py-1 w-32" type="date" placeholder="To"
+          <input className="input text-xs py-1 w-32" type="date"
             value={dateTo} onChange={e => setDateTo(e.target.value)} />
-          {(dateFrom||dateTo) && (
-            <button onClick={() => { setDateFrom(''); setDateTo('') }}
-              className="text-xs text-blue-600">Clear</button>
+          {(filterLocation||filterCategory||dateFrom||dateTo) && (
+            <button onClick={() => { setFilterLocation(''); setFilterCategory(''); setDateFrom(''); setDateTo('') }}
+              className="text-xs text-blue-600 hover:text-blue-800">Clear</button>
           )}
         </div>
       </div>
