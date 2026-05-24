@@ -123,7 +123,6 @@ export default function ManagerRequests() {
               <span className="text-xs text-gray-500 truncate flex-1">{r.requested_by_name || r.company}</span>
               <StatusBadge status={r.status} />
               {r.job_category && <span className="badge bg-gray-100 text-gray-600 text-xs">{r.job_category}</span>}
-              {!r.step2_complete && <span className="badge bg-amber-100 text-amber-700 text-xs">⚠</span>}
               <span className="text-xs text-gray-400 shrink-0">{r.date_needed}</span>
             </div>
             <div className="text-xs text-gray-400 mt-0.5 truncate">
