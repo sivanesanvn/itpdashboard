@@ -57,7 +57,7 @@ export default function PrintRequest({ request: r, onClose }) {
                 <div>
                   <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Client</div>
                   <table className="w-full text-xs">
-                    {[['Company',r.company],['Contact',r.contact_name],['Phone',r.contact_phone],['Location',r.location],['Equipment',r.equipment_no]].map(([k,v])=>v&&(
+                    {[['Company',r.company],['Requested by',r.requested_by_name],['Site contact',r.contact_name],['Phone',r.contact_phone],['Location / Unit',r.location],['Equipment',r.equipment_no]].map(([k,v])=>v&&(
                       <tr key={k}><td className="text-gray-400 pr-2 py-0.5 w-24">{k}</td><td className="font-medium">{v}</td></tr>
                     ))}
                   </table>
@@ -65,7 +65,7 @@ export default function PrintRequest({ request: r, onClose }) {
                 <div>
                   <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Scheduling</div>
                   <table className="w-full text-xs">
-                    {[['Requested by',r.requested_by_name],['Date needed',r.date_needed],['Priority',r.priority],['Scheduled',r.scheduled_date],['Technician',r.tech_name]].map(([k,v])=>v&&(
+                    {[['Date needed',r.date_needed],['Priority',r.priority],['Scheduled',r.scheduled_date],['Technician',r.tech_name]].map(([k,v])=>v&&(
                       <tr key={k}><td className="text-gray-400 pr-2 py-0.5 w-24">{k}</td><td className="font-medium">{v}</td></tr>
                     ))}
                   </table>
@@ -198,11 +198,10 @@ function generatePrintHTML(r, si) {
       <table><tbody>
         ${row('Company', r.company)}
         ${row('Requested by', r.requested_by_name)}
-        ${row('Contact', r.contact_name)}
+        ${row('Site contact', r.contact_name)}
         ${row('Phone', r.contact_phone)}
-        ${row('Location', r.location)}
+        ${row('Location / Unit', r.location)}
         ${row('Equipment/Piping', r.equipment_no)}
-        ${row('Requested by', r.requested_by_name)}
       </tbody></table>
     </div>
     <div>
