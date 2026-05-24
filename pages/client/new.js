@@ -71,13 +71,12 @@ export default function ClientNew() {
       alert('Please fill in: location, NDT method, and date needed.'); return
     }
     setSaving(true)
-    if (s1.requester_name || s1.requester_position || s1.requester_department) {
-      await supabase.from('profiles').update({
-        full_name:  s1.requester_name        || null,
-        position:   s1.requester_position   || null,
-        department: s1.requester_department || null,
-      }).eq('id', user.id)
+    const profileUpdates = {
+      position:   s1.requester_position   || null,
+      department: s1.requester_department || null,
     }
+    if (s1.requester_name) profileUpdates.full_name = s1.requester_name
+    await supabase.from('profiles').update(profileUpdates).eq('id', user.id)
     const { data, error } = await supabase.from('requests').insert({
       client_id:         user.id,
       company:           profile.company || profile.full_name,
