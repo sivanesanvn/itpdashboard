@@ -20,7 +20,6 @@ export default function ManagerRequests() {
   const [filter, setFilter] = useState('All')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
-  const [requestedBy, setRequestedBy] = useState('')
   const [showDateFilter, setShowDateFilter] = useState(false)
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState(null)
@@ -70,10 +69,9 @@ export default function ManagerRequests() {
     const matchStatus = filter === 'All' || r.status === filter
     const matchSearch = !search || [r.request_no, r.company, r.location, r.ndt_method, r.requested_by_name, r.equipment_no]
       .filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase())
-    const matchRequestedBy = !requestedBy || (r.requested_by_name || '').toLowerCase().includes(requestedBy.toLowerCase())
     const matchDateFrom = !dateFrom || r.created_at?.slice(0,10) >= dateFrom
     const matchDateTo = !dateTo || r.created_at?.slice(0,10) <= dateTo
-    return matchStatus && matchSearch && matchRequestedBy && matchDateFrom && matchDateTo
+    return matchStatus && matchSearch && matchDateFrom && matchDateTo
   })
 
   const newCount = requests.filter(r => r.status === 'New request').length
@@ -88,14 +86,12 @@ export default function ManagerRequests() {
               value={search} onChange={e => setSearch(e.target.value)} />
             <span className="absolute left-2.5 top-2.5 text-gray-400 text-sm">🔍</span>
           </div>
-          <input className="input text-xs py-1 w-32" placeholder="Requestor name"
-            value={requestedBy} onChange={e => setRequestedBy(e.target.value)} />
           <input className="input text-xs py-1 w-32" type="date" placeholder="From"
             value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
           <input className="input text-xs py-1 w-32" type="date" placeholder="To"
             value={dateTo} onChange={e => setDateTo(e.target.value)} />
-          {(requestedBy||dateFrom||dateTo) && (
-            <button onClick={() => { setRequestedBy(''); setDateFrom(''); setDateTo('') }}
+          {(dateFrom||dateTo) && (
+            <button onClick={() => { setDateFrom(''); setDateTo('') }}
               className="text-xs text-blue-600">Clear</button>
           )}
         </div>
