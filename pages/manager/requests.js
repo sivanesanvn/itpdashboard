@@ -26,6 +26,10 @@ export default function ManagerRequests() {
   const [selected, setSelected] = useState(null)
   const [docs, setDocs] = useState([])
   const [printing, setPrinting] = useState(false)
+  const [techs, setTechs] = useState([])
+  const [editingSchedule, setEditingSchedule] = useState(false)
+  const [schedForm, setSchedForm] = useState({ date: '', techId: '', notes: '' })
+  const [schedSaving, setSchedSaving] = useState(false)
 
   useEffect(() => { init() }, [])
 
@@ -35,7 +39,11 @@ export default function ManagerRequests() {
     const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     if (!p || p.role !== 'manager') { router.push('/'); return }
     setProfile(p)
-    await load()
+    await Promise.all([
+      load(),
+      supabase.from('profiles').select('id, full_name').eq('role', 'tech').order('full_name')
+        .then(({ data }) => setTechs(data || [])),
+    ])
   }
 
   async function load() {
@@ -57,7 +65,37 @@ export default function ManagerRequests() {
 
   async function openRequest(r) {
     setSelected(r)
+    setEditingSchedule(false)
     await loadDocs(r.id)
+  }
+
+  function startEditSchedule(r) {
+    setSchedForm({ date: r.scheduled_date || '', techId: r.tech_id || '', notes: r.manager_notes || '' })
+    setEditingSchedule(true)
+  }
+
+  async function saveSchedule() {
+    if (!schedForm.date) return
+    setSchedSaving(true)
+    const tech = techs.find(t => t.id === schedForm.techId)
+    await supabase.from('requests').update({
+      scheduled_date: schedForm.date,
+      tech_id: schedForm.techId || null,
+      tech_name: tech ? tech.full_name : null,
+      manager_notes: schedForm.notes || null,
+      status: selected.status === 'New request' ? 'Scheduled' : selected.status,
+    }).eq('id', selected.id)
+    setSchedSaving(false)
+    setEditingSchedule(false)
+    await load()
+    setSelected(prev => prev ? {
+      ...prev,
+      scheduled_date: schedForm.date,
+      tech_id: schedForm.techId || null,
+      tech_name: tech ? tech.full_name : null,
+      manager_notes: schedForm.notes || null,
+      status: prev.status === 'New request' ? 'Scheduled' : prev.status,
+    } : null)
   }
 
   async function updateStatus(id, status) {
@@ -245,21 +283,64 @@ export default function ManagerRequests() {
               </div>
 
               {/* Scheduling */}
-              {selected.scheduled_date && (
-                <div className="card text-sm space-y-1.5">
+              <div className="card text-sm">
+                <div className="flex items-center justify-between mb-1.5">
                   <div className="section-title">Scheduling</div>
-                  {[
-                    ['Date', selected.scheduled_date],
-                    ['Technician', selected.tech_name],
-                    ['Notes', selected.manager_notes],
-                  ].map(([k, v]) => v && (
-                    <div key={k} className="flex gap-2">
-                      <span className="text-gray-400 w-24 shrink-0">{k}</span>
-                      <span>{v}</span>
-                    </div>
-                  ))}
+                  {!editingSchedule && (
+                    <button onClick={() => startEditSchedule(selected)} className="btn btn-ghost text-xs">
+                      {selected.scheduled_date ? '✏️ Edit' : '📅 Schedule'}
+                    </button>
+                  )}
                 </div>
-              )}
+                {!editingSchedule ? (
+                  selected.scheduled_date ? (
+                    <div className="space-y-1.5">
+                      {[
+                        ['Date', selected.scheduled_date],
+                        ['Technician', selected.tech_name],
+                        ['Notes', selected.manager_notes],
+                      ].map(([k, v]) => v && (
+                        <div key={k} className="flex gap-2">
+                          <span className="text-gray-400 w-24 shrink-0">{k}</span>
+                          <span>{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-400">Not yet scheduled.</p>
+                  )
+                ) : (
+                  <div className="space-y-2">
+                    <div>
+                      <label className="label">Date</label>
+                      <input type="date" className="input" value={schedForm.date}
+                        onChange={e => setSchedForm(f => ({ ...f, date: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="label">Technician</label>
+                      <select className="input" value={schedForm.techId}
+                        onChange={e => setSchedForm(f => ({ ...f, techId: e.target.value }))}>
+                        <option value="">— Unassigned —</option>
+                        {techs.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label">Manager notes</label>
+                      <textarea className="input" rows={2} value={schedForm.notes}
+                        onChange={e => setSchedForm(f => ({ ...f, notes: e.target.value }))} />
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <button onClick={saveSchedule} disabled={schedSaving || !schedForm.date}
+                        className="btn btn-primary text-xs flex-1">
+                        {schedSaving ? 'Saving…' : 'Save'}
+                      </button>
+                      <button onClick={() => setEditingSchedule(false)} className="btn btn-ghost text-xs">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Comments */}
               <RequestComments requestId={selected.id} profile={profile} />
