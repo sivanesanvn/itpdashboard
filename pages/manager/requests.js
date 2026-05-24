@@ -24,6 +24,7 @@ export default function ManagerRequests() {
   const [filterCategory, setFilterCategory] = useState('')
   const [selected, setSelected] = useState(null)
   const [docs, setDocs] = useState([])
+  const [docsSet, setDocsSet] = useState(new Set())
   const [printing, setPrinting] = useState(false)
 
   useEffect(() => { init() }, [])
@@ -38,11 +39,13 @@ export default function ManagerRequests() {
   }
 
   async function load() {
-    const { data } = await supabase
-      .from('requests')
-      .select('*, support_jobs(*), status_history(*)')
-      .order('created_at', { ascending: false })
-    setRequests(data || [])
+    const [{ data: reqs }, { data: attachments }] = await Promise.all([
+      supabase.from('requests').select('*, support_jobs(*), status_history(*)')
+        .order('created_at', { ascending: false }),
+      supabase.from('request_documents').select('request_id').eq('file_type', 'document'),
+    ])
+    setRequests(reqs || [])
+    setDocsSet(new Set((attachments || []).map(d => d.request_id)))
   }
 
   async function loadDocs(requestId) {
@@ -112,23 +115,39 @@ export default function ManagerRequests() {
         ))}
       </div>
 
-      <div className="space-y-2">
+      {/* Column headers */}
+      <div className="hidden md:flex items-center gap-2 px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+        <span className="w-16 shrink-0">ID</span>
+        <span className="w-28 shrink-0">Requested By</span>
+        <span className="w-32 shrink-0">Method</span>
+        <span className="w-24 shrink-0">Category</span>
+        <span className="w-28 shrink-0">Location</span>
+        <span className="w-24 shrink-0">Equipment</span>
+        <span className="flex-1">Requested On</span>
+        <span className="w-36 shrink-0">Status</span>
+        <span className="w-5 shrink-0"></span>
+      </div>
+
+      <div className="space-y-1">
         {filtered.map(r => (
           <div key={r.id}
-            className="bg-white border border-gray-100 rounded-lg px-3 py-2 cursor-pointer hover:shadow-sm hover:border-blue-200 transition-all"
+            className="bg-white border border-gray-100 rounded-lg px-3 py-2.5 cursor-pointer hover:shadow-sm hover:border-blue-200 transition-all flex items-center gap-2 text-xs"
             onClick={() => openRequest(r)}>
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-xs text-blue-700 w-16 shrink-0">{r.request_no}</span>
-              <span className="text-xs truncate w-36">{r.ndt_method}</span>
-              <span className="text-xs text-gray-500 truncate flex-1">{r.requested_by_name || r.company}</span>
-              <StatusBadge status={r.status} />
-              {r.job_category && <span className="badge bg-gray-100 text-gray-600 text-xs">{r.job_category}</span>}
-              <span className="text-xs text-gray-400 shrink-0">{r.date_needed}</span>
-            </div>
-            <div className="text-xs text-gray-400 mt-0.5 truncate">
-              {r.location}{r.equipment_no ? ` · ${r.equipment_no}` : ''}{r.tech_name ? ` · 👷 ${r.tech_name}` : ''}
-              {r.support_jobs?.length > 0 && ` · ${r.support_jobs.map(s=>s.job_type).join(', ')}`}
-            </div>
+            <span className="font-semibold text-blue-700 w-16 shrink-0">{r.request_no}</span>
+            <span className="text-gray-700 w-28 shrink-0 truncate">{r.requested_by_name || '—'}</span>
+            <span className="text-gray-600 w-32 shrink-0 truncate">{r.ndt_method}</span>
+            <span className="w-24 shrink-0">
+              {r.job_category
+                ? <span className="badge bg-gray-100 text-gray-600">{r.job_category}</span>
+                : <span className="text-gray-300">—</span>}
+            </span>
+            <span className="text-gray-500 w-28 shrink-0 truncate">{r.location || '—'}</span>
+            <span className="text-gray-500 w-24 shrink-0 truncate">{r.equipment_no || '—'}</span>
+            <span className="text-gray-400 flex-1 shrink-0">{r.created_at?.slice(0,10) || '—'}</span>
+            <span className="w-36 shrink-0"><StatusBadge status={r.status} /></span>
+            <span className="w-5 shrink-0 text-center">
+              {docsSet.has(r.id) && <span title="Has attachments" className="text-blue-400">📎</span>}
+            </span>
           </div>
         ))}
         {filtered.length === 0 && <div className="card text-center text-gray-400 py-8">No requests found.</div>}
