@@ -1,10 +1,11 @@
 import { NDT_STATUSES } from '../lib/supabase'
 
-export default function PrintRequest({ request: r, onClose }) {
+export default function PrintRequest({ request: r, docs = [], onClose }) {
   const si = NDT_STATUSES.indexOf(r.status)
+  const attachments = docs.filter(d => d.file_type === 'document')
 
   function openPrintTab() {
-    const html = generatePrintHTML(r, si)
+    const html = generatePrintHTML(r, si, attachments)
     const win = window.open('', '_blank')
     if (!win) { alert('Please allow popups for this site to print.'); return }
     win.document.write(html)
@@ -82,6 +83,20 @@ export default function PrintRequest({ request: r, onClose }) {
                 </table>
               </div>
 
+              {/* Attachments */}
+              {attachments.length > 0 && (
+                <div className="mb-4">
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Attachments</div>
+                  <ul className="text-xs space-y-0.5">
+                    {attachments.map(d => (
+                      <li key={d.id} className="flex items-center gap-1.5 text-gray-700">
+                        <span>📄</span><span>{d.file_name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {/* Technical */}
               {r.step2_complete && (
                 <div className="mb-4">
@@ -123,7 +138,7 @@ export default function PrintRequest({ request: r, onClose }) {
   )
 }
 
-function generatePrintHTML(r, si) {
+function generatePrintHTML(r, si, attachments = []) {
   const statuses = ['New request','Scheduled','On-going','Site work completed','Report submitted','Report accepted']
   const timelineHTML = statuses.map((s,i) => {
     const done = i < si, active = i === si
@@ -222,6 +237,13 @@ function generatePrintHTML(r, si) {
       ${row('Description', r.description)}
     </tbody></table>
   </div>
+
+  ${attachments.length ? `<div style="margin-bottom:16px">
+    <div class="section-title">Attachments</div>
+    <ul style="margin:0;padding:0;list-style:none;font-size:11px">
+      ${attachments.map(d=>`<li style="padding:2px 0;color:#374151">📄 ${d.file_name}</li>`).join('')}
+    </ul>
+  </div>` : ''}
 
   ${r.step2_complete ? `<div style="margin-bottom:16px">
     <div class="section-title">Technical details</div>

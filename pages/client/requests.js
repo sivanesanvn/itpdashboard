@@ -426,6 +426,7 @@ export default function ClientRequests() {
 
       {printing && selected && (
         <PrintRequest request={{ ...selected, support_jobs: selected.support_jobs || [] }}
+          docs={docs}
           onClose={() => setPrinting(false)} />
       )}
     </Layout>
