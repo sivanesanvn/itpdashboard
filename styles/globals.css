@@ -14,6 +14,6 @@
   .input  { @apply w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white; }
   .label  { @apply block text-xs font-medium text-gray-500 mb-1 mt-3 first:mt-0; }
   .card   { @apply bg-white border border-gray-100 rounded-xl p-4 shadow-sm; }
-  .badge  { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium; }
+  .badge  { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap; }
   .section-title { @apply text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3; }
 }
