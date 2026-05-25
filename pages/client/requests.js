@@ -6,6 +6,7 @@ import { StatusBadge, NDTTimeline, SupportJobBadge } from '../../components/Stat
 import DocumentUpload from '../../components/DocumentUpload'
 import PrintRequest from '../../components/PrintRequest'
 import RequestComments from '../../components/RequestComments'
+import MethodSelect from '../../components/MethodSelect'
 
 const ACTIVE_STATUSES = NDT_STATUSES.filter(s => !['Report accepted','Cancelled'].includes(s))
 
@@ -22,6 +23,10 @@ export default function ClientRequests() {
   const [filters, setFilters] = useState({ status: '', category: '', dateFrom: '', dateTo: '', equipment: '', requestedBy: '' })
   const [showFilters, setShowFilters] = useState(false)
   const [acting, setActing] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [editForm, setEditForm] = useState({})
+  const [editSaving, setEditSaving] = useState(false)
+  const [successMsg, setSuccessMsg] = useState('')
 
   useEffect(() => { init() }, [])
 
@@ -45,6 +50,8 @@ export default function ClientRequests() {
 
   async function openRequest(r) {
     setSelected(r)
+    setEditMode(false)
+    setSuccessMsg('')
     const { data } = await supabase.from('request_documents').select('*')
       .eq('request_id', r.id).order('created_at', { ascending: false })
     setDocs(data || [])
@@ -68,6 +75,97 @@ export default function ClientRequests() {
   async function cancelRequest() {
     if (!confirm(`Cancel request ${selected.request_no}? This cannot be undone.`)) return
     await updateStatus('Cancelled')
+  }
+
+  function startEdit() {
+    setEditForm({
+      location:        selected.location        || '',
+      equipment_no:    selected.equipment_no    || '',
+      contact_name:    selected.contact_name    || '',
+      contact_phone:   selected.contact_phone   || '',
+      ndt_method:      selected.ndt_method      || '',
+      scope_qty:       selected.scope_qty       || '',
+      description:     selected.description     || '',
+      date_needed:     selected.date_needed     || '',
+      priority:        selected.priority        || 'Normal',
+      job_category:    selected.job_category    || '',
+      high_temp:       selected.high_temp       || false,
+      needs_scaffold:  selected.needs_scaffold  || false,
+      needs_insulation:selected.needs_insulation|| false,
+      needs_painting:  selected.needs_painting  || false,
+      material:        selected.material        || '',
+      thickness_mm:    selected.thickness_mm    || '',
+      pipe_size:       selected.pipe_size       || '',
+      p_number:        selected.p_number        || '',
+      code_standard:   selected.code_standard   || '',
+      acceptance:      selected.acceptance      || '',
+      special_notes:   selected.special_notes   || '',
+    })
+    setEditMode(true)
+  }
+
+  async function saveEdit() {
+    if (!editForm.location || !editForm.ndt_method || !editForm.date_needed) {
+      alert('Location, NDT method, and date needed are required.')
+      return
+    }
+    setEditSaving(true)
+    const wasScheduled = selected.status === 'Scheduled'
+
+    const { error } = await supabase.from('requests').update({
+      location:         editForm.location,
+      equipment_no:     editForm.equipment_no,
+      contact_name:     editForm.contact_name,
+      contact_phone:    editForm.contact_phone,
+      ndt_method:       editForm.ndt_method,
+      scope_qty:        editForm.scope_qty,
+      description:      editForm.description,
+      date_needed:      editForm.date_needed,
+      priority:         editForm.priority,
+      job_category:     editForm.job_category,
+      high_temp:        editForm.high_temp,
+      needs_scaffold:   editForm.needs_scaffold,
+      needs_insulation: editForm.needs_insulation,
+      needs_painting:   editForm.needs_painting,
+      material:         editForm.material,
+      thickness_mm:     editForm.thickness_mm,
+      pipe_size:        editForm.pipe_size,
+      p_number:         editForm.p_number,
+      code_standard:    editForm.code_standard,
+      acceptance:       editForm.acceptance,
+      special_notes:    editForm.special_notes,
+    }).eq('id', selected.id)
+
+    if (error) {
+      alert('Error saving: ' + error.message)
+      setEditSaving(false)
+      return
+    }
+
+    if (wasScheduled) {
+      await fetch('/api/notify-reschedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestNo:     selected.request_no,
+          company:       selected.company,
+          method:        editForm.ndt_method,
+          location:      editForm.location,
+          clientName:    profile.full_name,
+          scheduledDate: selected.scheduled_date,
+        }),
+      })
+    }
+
+    const updated = { ...selected, ...editForm }
+    setSelected(updated)
+    setRequests(prev => prev.map(r => r.id === selected.id ? updated : r))
+    setEditMode(false)
+    setEditSaving(false)
+    setSuccessMsg(wasScheduled
+      ? 'Request updated. The NDT Manager has been notified to reschedule.'
+      : 'Request updated successfully.')
+    setTimeout(() => setSuccessMsg(''), 6000)
   }
 
   // Filtering
@@ -318,12 +416,187 @@ export default function ClientRequests() {
                 <p className="text-xs text-gray-400 mt-0.5">{selected.ndt_method} · {selected.location}</p>
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={() => setPrinting(true)} className="btn btn-ghost text-xs">🖨️</button>
+                {['New request','Scheduled'].includes(selected.status) && !editMode && (
+                  <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Edit</button>
+                )}
+                {editMode && (
+                  <button onClick={() => setEditMode(false)} className="btn btn-ghost text-xs text-gray-500">Cancel</button>
+                )}
+                {!editMode && <button onClick={() => setPrinting(true)} className="btn btn-ghost text-xs">🖨️</button>}
                 <button onClick={() => setSelected(null)} className="text-gray-400 text-xl w-8 h-8 flex items-center justify-center">×</button>
               </div>
             </div>
 
-            <div className="p-4 space-y-3">
+            {/* Success message */}
+            {successMsg && (
+              <div className="mx-4 mt-3 bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-xs text-green-800 font-medium">
+                ✅ {successMsg}
+              </div>
+            )}
+
+            {/* Edit form */}
+            {editMode && (
+              <div className="p-4 space-y-3">
+                {selected.status === 'Scheduled' && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-800">
+                    ⚠ This request is already scheduled. Saving changes will notify the NDT Manager to reschedule.
+                  </div>
+                )}
+
+                <div className="card">
+                  <div className="section-title">📍 Site information</div>
+                  <label className="label text-xs">Location *</label>
+                  <input className="input text-sm" value={editForm.location}
+                    onChange={e => setEditForm(f => ({...f, location: e.target.value}))} />
+                  <label className="label text-xs">Equipment / piping number</label>
+                  <input className="input text-sm" placeholder="e.g. V-1201"
+                    value={editForm.equipment_no}
+                    onChange={e => setEditForm(f => ({...f, equipment_no: e.target.value}))} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label text-xs">Contact person on site</label>
+                      <input className="input text-sm" value={editForm.contact_name}
+                        onChange={e => setEditForm(f => ({...f, contact_name: e.target.value}))} />
+                    </div>
+                    <div>
+                      <label className="label text-xs">Phone / WhatsApp</label>
+                      <input className="input text-sm" value={editForm.contact_phone}
+                        onChange={e => setEditForm(f => ({...f, contact_phone: e.target.value}))} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card">
+                  <div className="section-title">🔍 NDT scope</div>
+                  <label className="label text-xs">Job category</label>
+                  <div className="grid grid-cols-3 gap-1.5 mb-2">
+                    {['Meridium','Turn Around','Ad-Hoc'].map(cat => (
+                      <label key={cat} className={`flex items-center justify-center gap-1 cursor-pointer p-2 rounded-lg border-2 transition-colors text-xs font-medium
+                        ${editForm.job_category === cat ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                        <input type="radio" name="edit-category" value={cat} checked={editForm.job_category === cat}
+                          onChange={() => setEditForm(f => ({...f, job_category: cat}))} className="hidden" />
+                        {cat}
+                      </label>
+                    ))}
+                  </div>
+                  <label className="label text-xs">NDT method *</label>
+                  <MethodSelect value={editForm.ndt_method} onChange={v => setEditForm(f => ({...f, ndt_method: v}))} />
+                  <label className="label text-xs">Estimated quantity</label>
+                  <input className="input text-sm" placeholder="e.g. 50 weld joints"
+                    value={editForm.scope_qty}
+                    onChange={e => setEditForm(f => ({...f, scope_qty: e.target.value}))} />
+                  <label className="label text-xs">Description of scope</label>
+                  <textarea className="input text-sm" rows={3} value={editForm.description}
+                    onChange={e => setEditForm(f => ({...f, description: e.target.value}))} />
+                  <label className={`flex items-center gap-3 cursor-pointer mt-2 p-2.5 rounded-lg border-2 transition-colors
+                    ${editForm.high_temp ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-red-300'}`}>
+                    <input type="checkbox" checked={editForm.high_temp}
+                      onChange={e => setEditForm(f => ({...f, high_temp: e.target.checked}))}
+                      className="w-4 h-4 rounded accent-red-600" />
+                    <div>
+                      <div className="text-xs font-medium text-red-700">🌡️ High temperature job (above 50°C)</div>
+                    </div>
+                  </label>
+                </div>
+
+                <div className="card">
+                  <div className="section-title">📅 Scheduling</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label text-xs">Date needed by *</label>
+                      <input className="input text-sm" type="date" value={editForm.date_needed}
+                        onChange={e => setEditForm(f => ({...f, date_needed: e.target.value}))} />
+                    </div>
+                    <div>
+                      <label className="label text-xs">Priority</label>
+                      <select className="input text-sm" value={editForm.priority}
+                        onChange={e => setEditForm(f => ({...f, priority: e.target.value}))}>
+                        <option>Normal</option>
+                        <option>Urgent</option>
+                        <option>Shutdown / turnaround</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card">
+                  <div className="section-title">🏗️ Support work needed?</div>
+                  <div className="space-y-2">
+                    {[
+                      { key: 'needs_scaffold',    icon: '🏗️', label: 'Scaffold erection / dismantling' },
+                      { key: 'needs_insulation',  icon: '🧱', label: 'Insulation removal & reinstatement' },
+                      { key: 'needs_painting',    icon: '🎨', label: 'Painting / surface preparation' },
+                    ].map(({ key, icon, label }) => (
+                      <label key={key} className="flex items-center gap-3 cursor-pointer p-2.5 rounded-lg border border-gray-100 hover:bg-gray-50">
+                        <input type="checkbox" checked={editForm[key]}
+                          onChange={e => setEditForm(f => ({...f, [key]: e.target.checked}))}
+                          className="w-4 h-4 rounded accent-blue-600" />
+                        <span className="text-sm">{icon} {label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="card">
+                  <div className="section-title">🔩 Technical details (optional)</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label text-xs">Material / component type</label>
+                      <input className="input text-sm" placeholder="e.g. Carbon steel pipe"
+                        value={editForm.material}
+                        onChange={e => setEditForm(f => ({...f, material: e.target.value}))} />
+                    </div>
+                    <div>
+                      <label className="label text-xs">Wall thickness (mm)</label>
+                      <input className="input text-sm" placeholder="e.g. 12.7"
+                        value={editForm.thickness_mm}
+                        onChange={e => setEditForm(f => ({...f, thickness_mm: e.target.value}))} />
+                    </div>
+                    <div>
+                      <label className="label text-xs">Pipe / vessel size</label>
+                      <input className="input text-sm" placeholder='e.g. 6" NB'
+                        value={editForm.pipe_size}
+                        onChange={e => setEditForm(f => ({...f, pipe_size: e.target.value}))} />
+                    </div>
+                    <div>
+                      <label className="label text-xs">P-number / material spec</label>
+                      <input className="input text-sm" placeholder="e.g. P1, ASTM A106 Gr.B"
+                        value={editForm.p_number}
+                        onChange={e => setEditForm(f => ({...f, p_number: e.target.value}))} />
+                    </div>
+                    <div>
+                      <label className="label text-xs">Code / standard</label>
+                      <input className="input text-sm" placeholder="e.g. ASME B31.3"
+                        value={editForm.code_standard}
+                        onChange={e => setEditForm(f => ({...f, code_standard: e.target.value}))} />
+                    </div>
+                    <div>
+                      <label className="label text-xs">Acceptance criteria</label>
+                      <input className="input text-sm" placeholder="e.g. No linear indications"
+                        value={editForm.acceptance}
+                        onChange={e => setEditForm(f => ({...f, acceptance: e.target.value}))} />
+                    </div>
+                  </div>
+                  <label className="label text-xs">Special requirements / safety notes</label>
+                  <textarea className="input text-sm" rows={3}
+                    placeholder="Radiation clearance needed, confined space, hot work permit, etc."
+                    value={editForm.special_notes}
+                    onChange={e => setEditForm(f => ({...f, special_notes: e.target.value}))} />
+                </div>
+
+                <div className="flex gap-3 pb-4">
+                  <button onClick={() => setEditMode(false)} className="btn btn-ghost flex-1 justify-center text-sm">
+                    Cancel
+                  </button>
+                  <button onClick={saveEdit} disabled={editSaving} className="btn btn-primary flex-1 justify-center text-sm">
+                    {editSaving ? 'Saving…' : selected.status === 'Scheduled' ? '💾 Save & notify manager' : '💾 Save changes'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Detail view */}
+            {!editMode && <div className="p-4 space-y-3">
               <div className="card py-3"><NDTTimeline status={selected.status} /></div>
 
               {/* Draft report review */}
@@ -419,7 +692,7 @@ export default function ClientRequests() {
                   ))}
                 </div>
               )}
-            </div>
+            </div>}
           </div>
         </div>
       )}
