@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
-import { supabase, PRIORITY_COLOR, NDT_STATUSES, JOB_CATEGORIES, STATUS_COLOR } from '../../lib/supabase'
+import { supabase, NDT_STATUSES, JOB_CATEGORIES } from '../../lib/supabase'
 import Layout from '../../components/Layout'
-import { StatusBadge, NDTTimeline, SupportJobBadge } from '../../components/StatusBadge'
+import { StatusBadge, NDTTimeline } from '../../components/StatusBadge'
 import DocumentUpload from '../../components/DocumentUpload'
 import PrintRequest from '../../components/PrintRequest'
 import RequestComments from '../../components/RequestComments'
@@ -20,8 +20,10 @@ export default function ClientRequests() {
   const [printing, setPrinting] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [search, setSearch] = useState('')
-  const [filters, setFilters] = useState({ status: '', category: '', dateFrom: '', dateTo: '', equipment: '', requestedBy: '' })
-  const [showFilters, setShowFilters] = useState(false)
+  const [filter, setFilter] = useState('All')
+  const [requestedBy, setRequestedBy] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [acting, setActing] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [editForm, setEditForm] = useState({})
@@ -79,27 +81,27 @@ export default function ClientRequests() {
 
   function startEdit() {
     setEditForm({
-      location:        selected.location        || '',
-      equipment_no:    selected.equipment_no    || '',
-      contact_name:    selected.contact_name    || '',
-      contact_phone:   selected.contact_phone   || '',
-      ndt_method:      selected.ndt_method      || '',
-      scope_qty:       selected.scope_qty       || '',
-      description:     selected.description     || '',
-      date_needed:     selected.date_needed     || '',
-      priority:        selected.priority        || 'Normal',
-      job_category:    selected.job_category    || '',
-      high_temp:       selected.high_temp       || false,
-      needs_scaffold:  selected.needs_scaffold  || false,
-      needs_insulation:selected.needs_insulation|| false,
-      needs_painting:  selected.needs_painting  || false,
-      material:        selected.material        || '',
-      thickness_mm:    selected.thickness_mm    || '',
-      pipe_size:       selected.pipe_size       || '',
-      p_number:        selected.p_number        || '',
-      code_standard:   selected.code_standard   || '',
-      acceptance:      selected.acceptance      || '',
-      special_notes:   selected.special_notes   || '',
+      location:         selected.location         || '',
+      equipment_no:     selected.equipment_no     || '',
+      contact_name:     selected.contact_name     || '',
+      contact_phone:    selected.contact_phone    || '',
+      ndt_method:       selected.ndt_method       || '',
+      scope_qty:        selected.scope_qty        || '',
+      description:      selected.description      || '',
+      date_needed:      selected.date_needed      || '',
+      priority:         selected.priority         || 'Normal',
+      job_category:     selected.job_category     || '',
+      high_temp:        selected.high_temp        || false,
+      needs_scaffold:   selected.needs_scaffold   || false,
+      needs_insulation: selected.needs_insulation || false,
+      needs_painting:   selected.needs_painting   || false,
+      material:         selected.material         || '',
+      thickness_mm:     selected.thickness_mm     || '',
+      pipe_size:        selected.pipe_size        || '',
+      p_number:         selected.p_number         || '',
+      code_standard:    selected.code_standard    || '',
+      acceptance:       selected.acceptance       || '',
+      special_notes:    selected.special_notes    || '',
     })
     setEditMode(true)
   }
@@ -168,21 +170,15 @@ export default function ClientRequests() {
     setTimeout(() => setSuccessMsg(''), 6000)
   }
 
-  // Filtering
   const filtered = requests.filter(r => {
-    const s = search.toLowerCase()
-    if (s && ![r.request_no, r.ndt_method, r.location, r.equipment_no, r.requested_by_name, r.company]
-      .filter(Boolean).join(' ').toLowerCase().includes(s)) return false
-    if (filters.status && r.status !== filters.status) return false
-    if (filters.category && r.job_category !== filters.category) return false
-    if (filters.equipment && !(r.equipment_no || '').toLowerCase().includes(filters.equipment.toLowerCase())) return false
-    if (filters.requestedBy && !(r.requested_by_name || '').toLowerCase().includes(filters.requestedBy.toLowerCase())) return false
-    if (filters.dateFrom && r.created_at?.slice(0,10) < filters.dateFrom) return false
-    if (filters.dateTo && r.created_at?.slice(0,10) > filters.dateTo) return false
-    return true
+    const matchStatus = filter === 'All' || r.status === filter
+    const matchSearch = !search || [r.request_no, r.company, r.location, r.ndt_method, r.requested_by_name, r.equipment_no]
+      .filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase())
+    const matchRequestedBy = !requestedBy || (r.requested_by_name || '').toLowerCase().includes(requestedBy.toLowerCase())
+    const matchDateFrom = !dateFrom || r.created_at?.slice(0,10) >= dateFrom
+    const matchDateTo = !dateTo || r.created_at?.slice(0,10) <= dateTo
+    return matchStatus && matchSearch && matchRequestedBy && matchDateFrom && matchDateTo
   })
-
-  const hasFilters = Object.values(filters).some(Boolean) || search
 
   // Dashboard stats
   const active = requests.filter(r => ACTIVE_STATUSES.includes(r.status))
@@ -215,7 +211,6 @@ export default function ClientRequests() {
       {/* DASHBOARD */}
       {activeTab === 'dashboard' && (
         <div>
-          {/* Stats */}
           <div className="grid grid-cols-4 gap-2 mb-4">
             {[
               { label: 'Total', value: requests.length, color: '' },
@@ -230,7 +225,6 @@ export default function ClientRequests() {
             ))}
           </div>
 
-          {/* Awaiting review alert */}
           {awaitingReview.length > 0 && (
             <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 mb-4">
               <div className="text-xs font-semibold text-indigo-700 mb-2">📋 Reports waiting for your review</div>
@@ -245,7 +239,6 @@ export default function ClientRequests() {
             </div>
           )}
 
-          {/* By status */}
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div className="bg-white border border-gray-100 rounded-xl p-4">
               <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">By status</div>
@@ -299,106 +292,63 @@ export default function ClientRequests() {
         </div>
       )}
 
-      {/* REQUESTS LIST */}
+      {/* ALL REQUESTS */}
       {activeTab === 'requests' && (
         <>
-          {/* Search bar */}
-          <div className="flex gap-2 mb-2">
-            <div className="flex-1 relative">
-              <input className="input pl-8 text-sm w-full" placeholder="Search by ID, method, location, equipment, requestor…"
-                value={search} onChange={e => setSearch(e.target.value)} />
-              <span className="absolute left-2.5 top-2.5 text-gray-400 text-sm">🔍</span>
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <h1 className="text-xl font-bold">All Requests</h1>
+            <div className="flex gap-2 flex-wrap items-center">
+              <div className="relative">
+                <input className="input w-56 text-sm pl-8" placeholder="Search ID, method, location, requestor…"
+                  value={search} onChange={e => setSearch(e.target.value)} />
+                <span className="absolute left-2.5 top-2.5 text-gray-400 text-sm">🔍</span>
+              </div>
+              <input className="input text-xs py-1 w-32" placeholder="Requestor name"
+                value={requestedBy} onChange={e => setRequestedBy(e.target.value)} />
+              <input className="input text-xs py-1 w-32" type="date"
+                value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+              <input className="input text-xs py-1 w-32" type="date"
+                value={dateTo} onChange={e => setDateTo(e.target.value)} />
+              {(requestedBy || dateFrom || dateTo) && (
+                <button onClick={() => { setRequestedBy(''); setDateFrom(''); setDateTo('') }}
+                  className="text-xs text-blue-600">Clear</button>
+              )}
             </div>
-            <button onClick={() => setShowFilters(!showFilters)}
-              className={`btn text-xs ${hasFilters ? 'btn-primary' : 'btn-ghost'}`}>
-              ⚙ Filters {Object.values(filters).filter(Boolean).length > 0 ? `(${Object.values(filters).filter(Boolean).length})` : ''}
-            </button>
           </div>
 
-          {/* Status quick filter */}
-          <div className="flex gap-1 flex-wrap mb-2">
-            {['All',...NDT_STATUSES].map(s => {
-              const count = s === 'All' ? requests.length : requests.filter(r=>r.status===s).length
-              if (count === 0 && s !== 'All') return null
-              return (
-                <button key={s} onClick={() => setFilters(f=>({...f,status:s==='All'?'':s}))}
-                  className={`px-2 py-0.5 rounded-full text-xs border transition-colors
-                    ${(s==='All'&&!filters.status)||filters.status===s ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-gray-500 border-gray-200'}`}>
-                  {s} ({count})
-                </button>
-              )
-            })}
+          <div className="flex gap-2 flex-wrap mb-4">
+            {['All', ...NDT_STATUSES].map(s => (
+              <button key={s} onClick={() => setFilter(s)}
+                className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors
+                  ${filter === s ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
+                {s} ({s === 'All' ? requests.length : requests.filter(r => r.status === s).length})
+              </button>
+            ))}
           </div>
 
-          {/* Advanced filters */}
-          {showFilters && (
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-2">
-              <div className="grid grid-cols-2 gap-2 mb-2">
-                <div>
-                  <label className="label text-xs">Equipment / piping no.</label>
-                  <input className="input text-xs py-1" placeholder="e.g. V-1201"
-                    value={filters.equipment} onChange={e => setFilters(f=>({...f,equipment:e.target.value}))} />
+          <div className="space-y-2">
+            {filtered.map(r => (
+              <div key={r.id}
+                className="bg-white border border-gray-100 rounded-lg px-3 py-2 cursor-pointer hover:shadow-sm hover:border-blue-200 transition-all"
+                onClick={() => openRequest(r)}>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-xs text-blue-700 w-16 shrink-0">{r.request_no}</span>
+                  <span className="text-xs truncate w-36">{r.ndt_method}</span>
+                  <span className="text-xs text-gray-500 truncate flex-1">{r.requested_by_name || r.company}</span>
+                  <StatusBadge status={r.status} />
+                  {r.job_category && <span className="badge bg-gray-100 text-gray-600 text-xs">{r.job_category}</span>}
+                  {!r.step2_complete && <span className="badge bg-amber-100 text-amber-700 text-xs">⚠</span>}
+                  {r.status === 'Draft Report Submitted' && <span className="badge bg-indigo-100 text-indigo-700 text-xs">Action needed</span>}
+                  <span className="text-xs text-gray-400 shrink-0">{r.date_needed}</span>
                 </div>
-                <div>
-                  <label className="label text-xs">Requested by</label>
-                  <input className="input text-xs py-1" placeholder="Name"
-                    value={filters.requestedBy} onChange={e => setFilters(f=>({...f,requestedBy:e.target.value}))} />
-                </div>
-                <div>
-                  <label className="label text-xs">Category</label>
-                  <select className="input text-xs py-1" value={filters.category}
-                    onChange={e => setFilters(f=>({...f,category:e.target.value}))}>
-                    <option value="">All categories</option>
-                    {JOB_CATEGORIES.map(c => <option key={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div className="grid grid-cols-2 gap-1">
-                  <div>
-                    <label className="label text-xs">Created from</label>
-                    <input className="input text-xs py-1" type="date"
-                      value={filters.dateFrom} onChange={e => setFilters(f=>({...f,dateFrom:e.target.value}))} />
-                  </div>
-                  <div>
-                    <label className="label text-xs">Created to</label>
-                    <input className="input text-xs py-1" type="date"
-                      value={filters.dateTo} onChange={e => setFilters(f=>({...f,dateTo:e.target.value}))} />
-                  </div>
+                <div className="text-xs text-gray-400 mt-0.5 truncate">
+                  {r.location}{r.equipment_no ? ` · ${r.equipment_no}` : ''}{r.tech_name ? ` · 👷 ${r.tech_name}` : ''}
+                  {r.support_jobs?.length > 0 && ` · ${r.support_jobs.map(s => s.job_type).join(', ')}`}
                 </div>
               </div>
-              <button onClick={() => { setFilters({status:'',category:'',dateFrom:'',dateTo:'',equipment:'',requestedBy:''}); setSearch('') }}
-                className="text-xs text-blue-600">Clear all filters</button>
-            </div>
-          )}
-
-          <div className="text-xs text-gray-400 mb-2">Showing {filtered.length} of {requests.length} requests</div>
-
-          {filtered.length === 0
-            ? <div className="card text-center py-8 text-gray-400 text-sm">No requests found.</div>
-            : <div className="space-y-1">
-                {filtered.map(r => (
-                  <div key={r.id}
-                    className={`bg-white border rounded-lg px-3 py-2 cursor-pointer hover:shadow-sm transition-all
-                      ${r.status === 'Cancelled' ? 'opacity-60 border-gray-100' : 'border-gray-100 hover:border-blue-200'}
-                      ${r.status === 'Draft Report Submitted' ? 'border-l-4 border-l-indigo-400' : ''}`}
-                    onClick={() => openRequest(r)}>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-xs text-blue-700 w-16 shrink-0">{r.request_no}</span>
-                      <span className="text-xs truncate flex-1">{r.ndt_method}</span>
-                      <StatusBadge status={r.status} />
-                      {r.job_category && <span className="badge bg-gray-100 text-gray-600 text-xs">{r.job_category}</span>}
-                      {r.status === 'Draft Report Submitted' && <span className="badge bg-indigo-100 text-indigo-700 text-xs">Action needed</span>}
-                      <span className="text-xs text-gray-400 shrink-0">{r.date_needed}</span>
-                    </div>
-                    <div className="text-xs text-gray-400 mt-0.5 flex gap-2 flex-wrap">
-                      {r.location && <span>{r.location}</span>}
-                      {r.equipment_no && <span>· {r.equipment_no}</span>}
-                      {r.requested_by_name && <span>· 👤 {r.requested_by_name}</span>}
-                      <span className="ml-auto">{r.created_at?.slice(0,10)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-          }
+            ))}
+            {filtered.length === 0 && <div className="card text-center text-gray-400 py-8">No requests found.</div>}
+          </div>
         </>
       )}
 
@@ -406,37 +356,34 @@ export default function ClientRequests() {
       {selected && profile && (
         <div className="fixed inset-0 bg-black/40 z-50 flex justify-end" onClick={() => setSelected(null)}>
           <div className="bg-white w-full max-w-lg h-full overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between z-10">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between z-10">
               <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-sm">{selected.request_no}</span>
-                  <StatusBadge status={selected.status} />
-                  {selected.job_category && <span className="badge bg-gray-100 text-gray-600 text-xs">{selected.job_category}</span>}
-                </div>
-                <p className="text-xs text-gray-400 mt-0.5">{selected.ndt_method} · {selected.location}</p>
+                <h2 className="font-semibold">{selected.request_no}</h2>
+                <p className="text-xs text-gray-400">{selected.company} · {selected.ndt_method}</p>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
                 {['New request','Scheduled'].includes(selected.status) && !editMode && (
                   <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Edit</button>
                 )}
                 {editMode && (
                   <button onClick={() => setEditMode(false)} className="btn btn-ghost text-xs text-gray-500">Cancel</button>
                 )}
-                {!editMode && <button onClick={() => setPrinting(true)} className="btn btn-ghost text-xs">🖨️</button>}
-                <button onClick={() => setSelected(null)} className="text-gray-400 text-xl w-8 h-8 flex items-center justify-center">×</button>
+                {!editMode && <button onClick={() => setPrinting(true)} className="btn btn-ghost text-xs">🖨️ Print</button>}
+                <button onClick={() => setSelected(null)} className="text-gray-400 text-2xl leading-none">×</button>
               </div>
             </div>
 
             {/* Success message */}
             {successMsg && (
-              <div className="mx-4 mt-3 bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-xs text-green-800 font-medium">
+              <div className="mx-5 mt-4 bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-xs text-green-800 font-medium">
                 ✅ {successMsg}
               </div>
             )}
 
             {/* Edit form */}
             {editMode && (
-              <div className="p-4 space-y-3">
+              <div className="p-5 space-y-4">
                 {selected.status === 'Scheduled' && (
                   <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-800">
                     ⚠ This request is already scheduled. Saving changes will notify the NDT Manager to reschedule.
@@ -493,9 +440,7 @@ export default function ClientRequests() {
                     <input type="checkbox" checked={editForm.high_temp}
                       onChange={e => setEditForm(f => ({...f, high_temp: e.target.checked}))}
                       className="w-4 h-4 rounded accent-red-600" />
-                    <div>
-                      <div className="text-xs font-medium text-red-700">🌡️ High temperature job (above 50°C)</div>
-                    </div>
+                    <div className="text-xs font-medium text-red-700">🌡️ High temperature job (above 50°C)</div>
                   </label>
                 </div>
 
@@ -584,7 +529,7 @@ export default function ClientRequests() {
                     onChange={e => setEditForm(f => ({...f, special_notes: e.target.value}))} />
                 </div>
 
-                <div className="flex gap-3 pb-4">
+                <div className="flex gap-3 pb-2">
                   <button onClick={() => setEditMode(false)} className="btn btn-ghost flex-1 justify-center text-sm">
                     Cancel
                   </button>
@@ -595,104 +540,150 @@ export default function ClientRequests() {
               </div>
             )}
 
-            {/* Detail view */}
-            {!editMode && <div className="p-4 space-y-3">
-              <div className="card py-3"><NDTTimeline status={selected.status} /></div>
-
-              {/* Draft report review */}
-              {selected.status === 'Draft Report Submitted' && (
-                <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3">
-                  <div className="text-sm font-semibold text-indigo-800 mb-1">📋 Draft report ready for review</div>
-                  <p className="text-xs text-indigo-600 mb-3">Download the report below. If satisfied, click Accept. If revision needed, contact your NDT Manager and leave as-is.</p>
-                  <button onClick={() => updateStatus('Draft Report Accepted')} disabled={acting}
-                    className="btn btn-primary text-xs w-full justify-center"
-                    style={{background:'#059669',borderColor:'#059669'}}>
-                    {acting ? 'Updating…' : '✅ Accept draft report'}
-                  </button>
-                </div>
-              )}
-
-              {selected.status === 'Draft Report Accepted' && (
-                <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-800">
-                  ✅ Draft report accepted — Cutech NDT team will issue the final report.
-                </div>
-              )}
-
-              {/* Cancel button for new/scheduled requests */}
-              {['New request','Scheduled'].includes(selected.status) && (
-                <button onClick={cancelRequest} disabled={acting}
-                  className="w-full text-xs text-red-500 hover:text-red-700 py-1.5 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
-                  ✕ Cancel this request
-                </button>
-              )}
-
-              {/* Support work */}
-              {selected.support_jobs?.length > 0 && (
+            {/* Detail view — matches manager layout */}
+            {!editMode && (
+              <div className="p-5 space-y-4">
+                {/* Status timeline */}
                 <div className="card">
-                  <div className="section-title">Support work</div>
-                  {selected.support_jobs.map(sj => (
-                    <div key={sj.id} className="flex items-center justify-between py-1.5 border-b last:border-0 border-gray-50">
-                      <div>
-                        <div className="text-xs font-medium">{sj.job_type}</div>
-                        <div className="text-xs text-gray-400">{sj.contractor_name || 'Not assigned'}</div>
-                      </div>
-                      <StatusBadge status={sj.status} />
+                  <NDTTimeline status={selected.status} />
+                </div>
+
+                {/* Draft report review */}
+                {selected.status === 'Draft Report Submitted' && (
+                  <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+                    <div className="text-sm font-semibold text-indigo-800 mb-1">📋 Draft report ready for review</div>
+                    <p className="text-xs text-indigo-600 mb-3">Download the report below. If satisfied, click Accept. If revision is needed, contact your NDT Manager and leave as-is.</p>
+                    <button onClick={() => updateStatus('Draft Report Accepted')} disabled={acting}
+                      className="btn btn-primary text-xs w-full justify-center"
+                      style={{background:'#059669',borderColor:'#059669'}}>
+                      {acting ? 'Updating…' : '✅ Accept draft report'}
+                    </button>
+                  </div>
+                )}
+
+                {selected.status === 'Draft Report Accepted' && (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-800">
+                    ✅ Draft report accepted — Cutech NDT team will issue the final report.
+                  </div>
+                )}
+
+                {/* Site & scope */}
+                <div className="card text-sm space-y-1.5">
+                  <div className="section-title">Site & scope</div>
+                  {[
+                    ['Requested by', selected.requested_by_name],
+                    ['Category',     selected.job_category],
+                    ['Location',     selected.location],
+                    ['Equipment',    selected.equipment_no],
+                    ['Contact',      selected.contact_name],
+                    ['Phone',        selected.contact_phone],
+                    ['Method',       selected.ndt_method],
+                    ['Scope',        selected.scope_qty],
+                    ['Date needed',  selected.date_needed],
+                    ['Priority',     selected.priority],
+                    ['Description',  selected.description],
+                  ].map(([k, v]) => v && (
+                    <div key={k} className="flex gap-2">
+                      <span className="text-gray-400 w-24 shrink-0">{k}</span>
+                      <span>{v}</span>
                     </div>
                   ))}
                 </div>
-              )}
 
-              {/* Docs */}
-              <div className="card">
-                <DocumentUpload requestId={selected.id} profile={profile} fileType="document"
-                  label="Supporting documents" existingDocs={docs} onUploaded={reloadDocs} />
-              </div>
+                {/* Technical details */}
+                {selected.step2_complete && (
+                  <div className="card text-sm space-y-1.5">
+                    <div className="section-title">Technical details</div>
+                    {[
+                      ['Material',    selected.material],
+                      ['Thickness',   selected.thickness_mm ? selected.thickness_mm + ' mm' : null],
+                      ['Pipe size',   selected.pipe_size],
+                      ['P-Number',    selected.p_number],
+                      ['Code',        selected.code_standard],
+                      ['Acceptance',  selected.acceptance],
+                      ['Notes',       selected.special_notes],
+                    ].map(([k, v]) => v && (
+                      <div key={k} className="flex gap-2">
+                        <span className="text-gray-400 w-24 shrink-0">{k}</span>
+                        <span>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-              {['Draft Report Submitted','Draft Report Accepted','Report accepted'].includes(selected.status) && (
+                {/* Support work */}
+                {selected.support_jobs?.length > 0 && (
+                  <div className="card">
+                    <div className="section-title">Support work</div>
+                    {selected.support_jobs.map(sj => (
+                      <div key={sj.id} className="flex items-center justify-between py-2 border-b last:border-0 border-gray-50">
+                        <div>
+                          <div className="text-sm font-medium">{sj.job_type}</div>
+                          <div className="text-xs text-gray-400">{sj.contractor_name || 'Unassigned'}</div>
+                        </div>
+                        <StatusBadge status={sj.status} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Supporting documents */}
+                <div className="card">
+                  <DocumentUpload requestId={selected.id} profile={profile} fileType="document"
+                    label="Supporting documents" existingDocs={docs} onUploaded={reloadDocs} />
+                </div>
+
+                {/* NDT Report */}
                 <div className="card">
                   <DocumentUpload requestId={selected.id} profile={profile} fileType="report"
                     label="NDT Report" existingDocs={docs} onUploaded={reloadDocs} />
                 </div>
-              )}
 
-              {/* Details */}
-              <div className="card text-xs space-y-1">
-                <div className="section-title">Details</div>
-                {[
-                  ['Requested by', selected.requested_by_name],
-                  ['Created', selected.created_at?.slice(0,10)],
-                  ['Location', selected.location],
-                  ['Equipment', selected.equipment_no],
-                  ['Method', selected.ndt_method],
-                  ['Category', selected.job_category],
-                  ['Scope', selected.scope_qty],
-                  ['Date needed', selected.date_needed],
-                  ['Priority', selected.priority],
-                  ['Scheduled', selected.scheduled_date],
-                ].map(([k, v]) => v && (
-                  <div key={k} className="flex gap-2">
-                    <span className="text-gray-400 w-24 shrink-0">{k}</span>
-                    <span>{v}</span>
+                {/* Scheduling */}
+                {selected.scheduled_date && (
+                  <div className="card text-sm space-y-1.5">
+                    <div className="section-title">Scheduling</div>
+                    {[
+                      ['Date',       selected.scheduled_date],
+                      ['Technician', selected.tech_name],
+                      ['Notes',      selected.manager_notes],
+                    ].map(([k, v]) => v && (
+                      <div key={k} className="flex gap-2">
+                        <span className="text-gray-400 w-24 shrink-0">{k}</span>
+                        <span>{v}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
+
+                {/* Comments */}
+                <RequestComments requestId={selected.id} profile={profile} />
+
+                {/* Cancel */}
+                {['New request','Scheduled'].includes(selected.status) && (
+                  <button onClick={cancelRequest} disabled={acting}
+                    className="w-full text-xs text-red-500 border border-red-200 rounded-lg py-2 hover:bg-red-50 transition-colors">
+                    ✕ Cancel this request
+                  </button>
+                )}
+
+                {/* Audit trail */}
+                {selected.status_history?.length > 0 && (
+                  <div className="card">
+                    <div className="section-title">Audit trail</div>
+                    {[...selected.status_history].reverse().map(h => (
+                      <div key={h.id} className="flex items-center gap-2 text-xs py-1">
+                        <span className="text-gray-400 w-32 shrink-0">
+                          {new Date(h.changed_at).toLocaleString('en-SG', { dateStyle: 'short', timeStyle: 'short' })}
+                        </span>
+                        <span className="text-gray-400">{h.old_status} →</span>
+                        <StatusBadge status={h.new_status} />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-
-              <RequestComments requestId={selected.id} profile={profile} />
-
-              {selected.status_history?.length > 0 && (
-                <div className="card text-xs">
-                  <div className="section-title">Activity</div>
-                  {[...selected.status_history].reverse().map(h => (
-                    <div key={h.id} className="flex items-center gap-2 py-0.5">
-                      <span className="text-gray-400 w-28 shrink-0 text-xs">
-                        {new Date(h.changed_at).toLocaleString('en-SG', {dateStyle:'short',timeStyle:'short'})}
-                      </span>
-                      <StatusBadge status={h.new_status} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>}
+            )}
           </div>
         </div>
       )}
