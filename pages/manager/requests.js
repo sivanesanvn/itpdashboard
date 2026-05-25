@@ -41,7 +41,7 @@ export default function ManagerRequests() {
   async function load() {
     const { data } = await supabase
       .from('requests')
-      .select('*, support_jobs(*), status_history(*)')
+      .select('*, support_jobs(*), status_history(*), request_documents(id)')
       .order('created_at', { ascending: false })
     setRequests(data || [])
   }
@@ -111,23 +111,21 @@ export default function ManagerRequests() {
         ))}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1">
         {filtered.map(r => (
           <div key={r.id}
             className="bg-white border border-gray-100 rounded-lg px-3 py-2 cursor-pointer hover:shadow-sm hover:border-blue-200 transition-all"
             onClick={() => openRequest(r)}>
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-xs text-blue-700 w-16 shrink-0">{r.request_no}</span>
-              <span className="text-xs truncate w-36">{r.ndt_method}</span>
-              <span className="text-xs text-gray-500 truncate flex-1">{r.requested_by_name || r.company}</span>
+            <div className="flex items-center gap-2 text-xs min-w-0">
+              <span className="font-semibold text-blue-700 w-14 shrink-0">{r.request_no}</span>
+              <span className="text-gray-700 w-24 truncate shrink-0">{r.requested_by_name || r.company || '—'}</span>
+              <span className="text-gray-600 w-20 truncate shrink-0">{r.ndt_method}</span>
+              <span className="text-gray-500 w-20 truncate shrink-0">{r.job_category || '—'}</span>
+              <span className="text-gray-400 flex-1 truncate min-w-0">{r.location || '—'}</span>
+              <span className="text-gray-400 w-20 truncate shrink-0">{r.equipment_no || '—'}</span>
+              <span className="text-gray-400 w-20 shrink-0">{r.created_at?.slice(0,10)}</span>
               <StatusBadge status={r.status} />
-              {r.job_category && <span className="badge bg-gray-100 text-gray-600 text-xs">{r.job_category}</span>}
-              {!r.step2_complete && <span className="badge bg-amber-100 text-amber-700 text-xs">⚠</span>}
-              <span className="text-xs text-gray-400 shrink-0">{r.date_needed}</span>
-            </div>
-            <div className="text-xs text-gray-400 mt-0.5 truncate">
-              {r.location}{r.equipment_no ? ` · ${r.equipment_no}` : ''}{r.tech_name ? ` · 👷 ${r.tech_name}` : ''}
-              {r.support_jobs?.length > 0 && ` · ${r.support_jobs.map(s=>s.job_type).join(', ')}`}
+              {r.request_documents?.length > 0 && <span className="shrink-0 text-gray-400" title="Has attachments">📎</span>}
             </div>
           </div>
         ))}
