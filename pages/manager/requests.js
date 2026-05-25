@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
-import { supabase, NDT_STATUSES, PRIORITY_COLOR, STATUS_COLOR, JOB_CATEGORIES } from '../../lib/supabase'
+import { supabase, NDT_STATUSES, JOB_CATEGORIES } from '../../lib/supabase'
 import Layout from '../../components/Layout'
-import { StatusBadge, NDTTimeline, SupportJobBadge } from '../../components/StatusBadge'
+import { StatusBadge, NDTTimeline } from '../../components/StatusBadge'
 import DocumentUpload from '../../components/DocumentUpload'
 import PrintRequest from '../../components/PrintRequest'
 import RequestComments from '../../components/RequestComments'
@@ -17,14 +17,13 @@ export default function ManagerRequests() {
   const router = useRouter()
   const [profile, setProfile] = useState(null)
   const [requests, setRequests] = useState([])
-  const [filter, setFilter] = useState('All')
+  const [filter, setFilter]     = useState('All')
+  const [search, setSearch]     = useState('')
+  const [category, setCategory] = useState('')
   const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
-  const [requestedBy, setRequestedBy] = useState('')
-  const [showDateFilter, setShowDateFilter] = useState(false)
-  const [search, setSearch] = useState('')
+  const [dateTo, setDateTo]     = useState('')
   const [selected, setSelected] = useState(null)
-  const [docs, setDocs] = useState([])
+  const [docs, setDocs]         = useState([])
   const [printing, setPrinting] = useState(false)
 
   useEffect(() => { init() }, [])
@@ -67,76 +66,109 @@ export default function ManagerRequests() {
   }
 
   const filtered = requests.filter(r => {
-    const matchStatus = filter === 'All' || r.status === filter
-    const matchSearch = !search || [r.request_no, r.company, r.location, r.ndt_method, r.requested_by_name, r.equipment_no]
+    const matchStatus   = filter === 'All' || r.status === filter
+    const matchSearch   = !search || [r.request_no, r.company, r.location, r.ndt_method, r.requested_by_name, r.equipment_no]
       .filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase())
-    const matchRequestedBy = !requestedBy || (r.requested_by_name || '').toLowerCase().includes(requestedBy.toLowerCase())
-    const matchDateFrom = !dateFrom || r.created_at?.slice(0,10) >= dateFrom
-    const matchDateTo = !dateTo || r.created_at?.slice(0,10) <= dateTo
-    return matchStatus && matchSearch && matchRequestedBy && matchDateFrom && matchDateTo
+    const matchCategory = !category || r.job_category === category
+    const matchFrom     = !dateFrom || r.created_at?.slice(0,10) >= dateFrom
+    const matchTo       = !dateTo   || r.created_at?.slice(0,10) <= dateTo
+    return matchStatus && matchSearch && matchCategory && matchFrom && matchTo
   })
 
   const newCount = requests.filter(r => r.status === 'New request').length
 
   return (
     <Layout profile={profile} nav={MANAGER_NAV(newCount)}>
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+
+      {/* ── Page header + filters ── */}
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
         <h1 className="text-xl font-bold">All Requests</h1>
         <div className="flex gap-2 flex-wrap items-center">
           <div className="relative">
-            <input className="input w-56 text-sm pl-8" placeholder="Search ID, company, method, requestor…"
+            <input className="input w-52 text-sm pl-8" placeholder="Search ID, company, method…"
               value={search} onChange={e => setSearch(e.target.value)} />
             <span className="absolute left-2.5 top-2.5 text-gray-400 text-sm">🔍</span>
           </div>
-          <input className="input text-xs py-1 w-32" placeholder="Requestor name"
-            value={requestedBy} onChange={e => setRequestedBy(e.target.value)} />
-          <input className="input text-xs py-1 w-32" type="date" placeholder="From"
-            value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
-          <input className="input text-xs py-1 w-32" type="date" placeholder="To"
-            value={dateTo} onChange={e => setDateTo(e.target.value)} />
-          {(requestedBy||dateFrom||dateTo) && (
-            <button onClick={() => { setRequestedBy(''); setDateFrom(''); setDateTo('') }}
+          <select className="input text-xs py-1.5 w-36" value={category} onChange={e => setCategory(e.target.value)}>
+            <option value="">All categories</option>
+            {JOB_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <input className="input text-xs py-1.5 w-32" type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+          <input className="input text-xs py-1.5 w-32" type="date" value={dateTo}   onChange={e => setDateTo(e.target.value)} />
+          {(category || dateFrom || dateTo) && (
+            <button onClick={() => { setCategory(''); setDateFrom(''); setDateTo('') }}
               className="text-xs text-blue-600">Clear</button>
           )}
         </div>
       </div>
 
-      <div className="flex gap-2 flex-wrap mb-4">
+      {/* ── Status pills ── */}
+      <div className="flex gap-1.5 flex-wrap mb-4">
         {['All', ...NDT_STATUSES].map(s => (
           <button key={s} onClick={() => setFilter(s)}
-            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors whitespace-nowrap
               ${filter === s ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
             {s} ({s === 'All' ? requests.length : requests.filter(r => r.status === s).length})
           </button>
         ))}
       </div>
 
-      <div className="space-y-1">
-        {filtered.map(r => (
-          <div key={r.id}
-            className="bg-white border border-gray-100 rounded-lg px-3 py-2 cursor-pointer hover:shadow-sm hover:border-blue-200 transition-all"
-            onClick={() => openRequest(r)}>
-            <div className="flex items-center gap-2 text-xs min-w-0">
-              <span className="font-semibold text-blue-700 w-14 shrink-0">{r.request_no}</span>
-              <span className="text-gray-700 w-24 truncate shrink-0">{r.requested_by_name || r.company || '—'}</span>
-              <span className="text-gray-600 w-20 truncate shrink-0">{r.ndt_method}</span>
-              <span className="text-gray-500 w-20 truncate shrink-0">{r.job_category || '—'}</span>
-              <span className="text-gray-400 flex-1 truncate min-w-0">{r.location || '—'}</span>
-              <span className="text-gray-400 w-20 truncate shrink-0">{r.equipment_no || '—'}</span>
-              <span className="text-gray-400 w-20 shrink-0">{r.created_at?.slice(0,10)}</span>
-              <StatusBadge status={r.status} />
-              {r.request_documents?.length > 0 && <span className="shrink-0 text-gray-400" title="Has attachments">📎</span>}
-            </div>
-          </div>
-        ))}
-        {filtered.length === 0 && <div className="card text-center text-gray-400 py-8">No requests found.</div>}
+      {/* ── Table ── */}
+      <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-gray-100 bg-gray-50/80">
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide w-16">ID</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide w-28">Requested By</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide">Method</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide w-24">Category</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide">Location</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide w-24">Equipment</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide w-24">Requested On</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide w-36">Status</th>
+              <th className="px-3 py-2.5 w-6"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {filtered.map(r => (
+              <tr key={r.id} onClick={() => openRequest(r)}
+                className="hover:bg-blue-50/30 cursor-pointer transition-colors">
+                <td className="px-3 py-2.5">
+                  <span className="font-semibold text-blue-700">{r.request_no}</span>
+                </td>
+                <td className="px-3 py-2.5 text-gray-700 max-w-[112px]">
+                  <span className="block truncate">{r.requested_by_name || '—'}</span>
+                </td>
+                <td className="px-3 py-2.5 text-gray-600 max-w-[160px]">
+                  <span className="block truncate">{r.ndt_method}</span>
+                </td>
+                <td className="px-3 py-2.5">
+                  <span className="font-medium text-gray-700">{r.job_category || '—'}</span>
+                </td>
+                <td className="px-3 py-2.5 text-gray-500 max-w-[160px]">
+                  <span className="block truncate">{r.location || '—'}</span>
+                </td>
+                <td className="px-3 py-2.5 text-gray-500">
+                  <span className="block truncate">{r.equipment_no || '—'}</span>
+                </td>
+                <td className="px-3 py-2.5 text-gray-400 whitespace-nowrap">{r.created_at?.slice(0,10)}</td>
+                <td className="px-3 py-2.5"><StatusBadge status={r.status} /></td>
+                <td className="px-3 py-2.5 text-gray-400">
+                  {r.request_documents?.length > 0 && <span title="Has attachments">📎</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {filtered.length === 0 && (
+          <div className="text-center text-gray-400 py-10 text-sm">No requests found.</div>
+        )}
       </div>
 
-      {/* Detail drawer */}
+      {/* ── Detail drawer ── */}
       {selected && profile && (
         <div className="fixed inset-0 bg-black/40 z-50 flex justify-end" onClick={() => setSelected(null)}>
           <div className="bg-white w-full max-w-lg h-full overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
-            {/* Header */}
             <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between z-10">
               <div>
                 <h2 className="font-semibold">{selected.request_no}</h2>
@@ -149,7 +181,6 @@ export default function ManagerRequests() {
             </div>
 
             <div className="p-5 space-y-4">
-              {/* Status */}
               <div className="card">
                 <NDTTimeline status={selected.status} />
                 <label className="label mt-3">Update status</label>
@@ -159,20 +190,20 @@ export default function ManagerRequests() {
                 </select>
               </div>
 
-              {/* Details */}
               <div className="card text-sm space-y-1.5">
                 <div className="section-title">Site & scope</div>
                 {[
                   ['Requested by', selected.requested_by_name],
-                  ['Category', selected.job_category],
-                  ['Location', selected.location],
-                  ['Contact', selected.contact_name],
-                  ['Phone', selected.contact_phone],
-                  ['Method', selected.ndt_method],
-                  ['Scope', selected.scope_qty],
-                  ['Date needed', selected.date_needed],
-                  ['Priority', selected.priority],
-                  ['Description', selected.description],
+                  ['Category',     selected.job_category],
+                  ['Location',     selected.location],
+                  ['Equipment',    selected.equipment_no],
+                  ['Contact',      selected.contact_name],
+                  ['Phone',        selected.contact_phone],
+                  ['Method',       selected.ndt_method],
+                  ['Scope',        selected.scope_qty],
+                  ['Date needed',  selected.date_needed],
+                  ['Priority',     selected.priority],
+                  ['Description',  selected.description],
                 ].map(([k, v]) => v && (
                   <div key={k} className="flex gap-2">
                     <span className="text-gray-400 w-24 shrink-0">{k}</span>
@@ -181,18 +212,17 @@ export default function ManagerRequests() {
                 ))}
               </div>
 
-              {/* Technical details */}
               {selected.step2_complete && (
                 <div className="card text-sm space-y-1.5">
                   <div className="section-title">Technical details</div>
                   {[
-                    ['Material', selected.material],
-                    ['Thickness', selected.thickness_mm ? selected.thickness_mm + ' mm' : null],
-                    ['Pipe size', selected.pipe_size],
-                    ['P-Number', selected.p_number],
-                    ['Code', selected.code_standard],
+                    ['Material',   selected.material],
+                    ['Thickness',  selected.thickness_mm ? selected.thickness_mm + ' mm' : null],
+                    ['Pipe size',  selected.pipe_size],
+                    ['P-Number',   selected.p_number],
+                    ['Code',       selected.code_standard],
                     ['Acceptance', selected.acceptance],
-                    ['Notes', selected.special_notes],
+                    ['Notes',      selected.special_notes],
                   ].map(([k, v]) => v && (
                     <div key={k} className="flex gap-2">
                       <span className="text-gray-400 w-24 shrink-0">{k}</span>
@@ -202,7 +232,6 @@ export default function ManagerRequests() {
                 </div>
               )}
 
-              {/* Support jobs */}
               {selected.support_jobs?.length > 0 && (
                 <div className="card">
                   <div className="section-title">Support work</div>
@@ -218,38 +247,23 @@ export default function ManagerRequests() {
                 </div>
               )}
 
-              {/* Supporting documents */}
               <div className="card">
-                <DocumentUpload
-                  requestId={selected.id}
-                  profile={profile}
-                  fileType="document"
-                  label="Supporting documents"
-                  existingDocs={docs}
-                  onUploaded={() => loadDocs(selected.id)}
-                />
+                <DocumentUpload requestId={selected.id} profile={profile} fileType="document"
+                  label="Supporting documents" existingDocs={docs} onUploaded={() => loadDocs(selected.id)} />
               </div>
 
-              {/* NDT Report */}
               <div className="card">
-                <DocumentUpload
-                  requestId={selected.id}
-                  profile={profile}
-                  fileType="report"
-                  label="NDT Report"
-                  existingDocs={docs}
-                  onUploaded={() => loadDocs(selected.id)}
-                />
+                <DocumentUpload requestId={selected.id} profile={profile} fileType="report"
+                  label="NDT Report" existingDocs={docs} onUploaded={() => loadDocs(selected.id)} />
               </div>
 
-              {/* Scheduling */}
               {selected.scheduled_date && (
                 <div className="card text-sm space-y-1.5">
                   <div className="section-title">Scheduling</div>
                   {[
-                    ['Date', selected.scheduled_date],
+                    ['Date',       selected.scheduled_date],
                     ['Technician', selected.tech_name],
-                    ['Notes', selected.manager_notes],
+                    ['Notes',      selected.manager_notes],
                   ].map(([k, v]) => v && (
                     <div key={k} className="flex gap-2">
                       <span className="text-gray-400 w-24 shrink-0">{k}</span>
@@ -259,10 +273,8 @@ export default function ManagerRequests() {
                 </div>
               )}
 
-              {/* Comments */}
               <RequestComments requestId={selected.id} profile={profile} />
 
-              {/* Cancel request */}
               {['New request','Scheduled'].includes(selected.status) && (
                 <button onClick={async () => {
                   if (!confirm('Cancel request ' + selected.request_no + '?')) return
@@ -274,7 +286,6 @@ export default function ManagerRequests() {
                 </button>
               )}
 
-              {/* Audit trail */}
               {selected.status_history?.length > 0 && (
                 <div className="card">
                   <div className="section-title">Audit trail</div>
@@ -294,12 +305,9 @@ export default function ManagerRequests() {
         </div>
       )}
 
-      {/* Print modal */}
       {printing && selected && (
-        <PrintRequest
-          request={{ ...selected, support_jobs: selected.support_jobs || [] }}
-          onClose={() => setPrinting(false)}
-        />
+        <PrintRequest request={{ ...selected, support_jobs: selected.support_jobs || [] }}
+          onClose={() => setPrinting(false)} />
       )}
     </Layout>
   )

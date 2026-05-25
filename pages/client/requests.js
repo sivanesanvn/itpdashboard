@@ -19,11 +19,11 @@ export default function ClientRequests() {
   const [docs, setDocs] = useState([])
   const [printing, setPrinting] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
-  const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState('All')
-  const [requestedBy, setRequestedBy] = useState('')
+  const [search, setSearch]     = useState('')
+  const [filter, setFilter]     = useState('All')
+  const [category, setCategory] = useState('')
   const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
+  const [dateTo, setDateTo]     = useState('')
   const [acting, setActing] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [editForm, setEditForm] = useState({})
@@ -171,13 +171,13 @@ export default function ClientRequests() {
   }
 
   const filtered = requests.filter(r => {
-    const matchStatus = filter === 'All' || r.status === filter
-    const matchSearch = !search || [r.request_no, r.company, r.location, r.ndt_method, r.requested_by_name, r.equipment_no]
+    const matchStatus   = filter === 'All' || r.status === filter
+    const matchSearch   = !search || [r.request_no, r.company, r.location, r.ndt_method, r.requested_by_name, r.equipment_no]
       .filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase())
-    const matchRequestedBy = !requestedBy || (r.requested_by_name || '').toLowerCase().includes(requestedBy.toLowerCase())
+    const matchCategory = !category || r.job_category === category
     const matchDateFrom = !dateFrom || r.created_at?.slice(0,10) >= dateFrom
-    const matchDateTo = !dateTo || r.created_at?.slice(0,10) <= dateTo
-    return matchStatus && matchSearch && matchRequestedBy && matchDateFrom && matchDateTo
+    const matchDateTo   = !dateTo   || r.created_at?.slice(0,10) <= dateTo
+    return matchStatus && matchSearch && matchCategory && matchDateFrom && matchDateTo
   })
 
   // Dashboard stats
@@ -295,56 +295,86 @@ export default function ClientRequests() {
       {/* ALL REQUESTS */}
       {activeTab === 'requests' && (
         <>
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
             <h1 className="text-xl font-bold">All Requests</h1>
             <div className="flex gap-2 flex-wrap items-center">
               <div className="relative">
-                <input className="input w-56 text-sm pl-8" placeholder="Search ID, method, location, requestor…"
+                <input className="input w-52 text-sm pl-8" placeholder="Search ID, method, location…"
                   value={search} onChange={e => setSearch(e.target.value)} />
                 <span className="absolute left-2.5 top-2.5 text-gray-400 text-sm">🔍</span>
               </div>
-              <input className="input text-xs py-1 w-32" placeholder="Requestor name"
-                value={requestedBy} onChange={e => setRequestedBy(e.target.value)} />
-              <input className="input text-xs py-1 w-32" type="date"
-                value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
-              <input className="input text-xs py-1 w-32" type="date"
-                value={dateTo} onChange={e => setDateTo(e.target.value)} />
-              {(requestedBy || dateFrom || dateTo) && (
-                <button onClick={() => { setRequestedBy(''); setDateFrom(''); setDateTo('') }}
+              <select className="input text-xs py-1.5 w-36" value={category} onChange={e => setCategory(e.target.value)}>
+                <option value="">All categories</option>
+                {JOB_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <input className="input text-xs py-1.5 w-32" type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+              <input className="input text-xs py-1.5 w-32" type="date" value={dateTo}   onChange={e => setDateTo(e.target.value)} />
+              {(category || dateFrom || dateTo) && (
+                <button onClick={() => { setCategory(''); setDateFrom(''); setDateTo('') }}
                   className="text-xs text-blue-600">Clear</button>
               )}
             </div>
           </div>
 
-          <div className="flex gap-2 flex-wrap mb-4">
+          <div className="flex gap-1.5 flex-wrap mb-4">
             {['All', ...NDT_STATUSES].map(s => (
               <button key={s} onClick={() => setFilter(s)}
-                className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors
+                className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors whitespace-nowrap
                   ${filter === s ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
                 {s} ({s === 'All' ? requests.length : requests.filter(r => r.status === s).length})
               </button>
             ))}
           </div>
 
-          <div className="space-y-1">
-            {filtered.map(r => (
-              <div key={r.id}
-                className="bg-white border border-gray-100 rounded-lg px-3 py-2 cursor-pointer hover:shadow-sm hover:border-blue-200 transition-all"
-                onClick={() => openRequest(r)}>
-                <div className="flex items-center gap-2 text-xs min-w-0">
-                  <span className="font-semibold text-blue-700 w-14 shrink-0">{r.request_no}</span>
-                  <span className="text-gray-700 w-24 truncate shrink-0">{r.requested_by_name || r.company || '—'}</span>
-                  <span className="text-gray-600 w-20 truncate shrink-0">{r.ndt_method}</span>
-                  <span className="text-gray-500 w-20 truncate shrink-0">{r.job_category || '—'}</span>
-                  <span className="text-gray-400 flex-1 truncate min-w-0">{r.location || '—'}</span>
-                  <span className="text-gray-400 w-20 truncate shrink-0">{r.equipment_no || '—'}</span>
-                  <span className="text-gray-400 w-20 shrink-0">{r.created_at?.slice(0,10)}</span>
-                  <StatusBadge status={r.status} />
-                  {r.request_documents?.length > 0 && <span className="shrink-0 text-gray-400" title="Has attachments">📎</span>}
-                </div>
-              </div>
-            ))}
-            {filtered.length === 0 && <div className="card text-center text-gray-400 py-8">No requests found.</div>}
+          <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50/80">
+                  <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide w-16">ID</th>
+                  <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide w-28">Requested By</th>
+                  <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide">Method</th>
+                  <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide w-24">Category</th>
+                  <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide">Location</th>
+                  <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide w-24">Equipment</th>
+                  <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide w-24">Requested On</th>
+                  <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide w-36">Status</th>
+                  <th className="px-3 py-2.5 w-6"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filtered.map(r => (
+                  <tr key={r.id} onClick={() => openRequest(r)}
+                    className="hover:bg-blue-50/30 cursor-pointer transition-colors">
+                    <td className="px-3 py-2.5">
+                      <span className="font-semibold text-blue-700">{r.request_no}</span>
+                    </td>
+                    <td className="px-3 py-2.5 text-gray-700 max-w-[112px]">
+                      <span className="block truncate">{r.requested_by_name || '—'}</span>
+                    </td>
+                    <td className="px-3 py-2.5 text-gray-600 max-w-[160px]">
+                      <span className="block truncate">{r.ndt_method}</span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span className="font-medium text-gray-700">{r.job_category || '—'}</span>
+                    </td>
+                    <td className="px-3 py-2.5 text-gray-500 max-w-[160px]">
+                      <span className="block truncate">{r.location || '—'}</span>
+                    </td>
+                    <td className="px-3 py-2.5 text-gray-500">
+                      <span className="block truncate">{r.equipment_no || '—'}</span>
+                    </td>
+                    <td className="px-3 py-2.5 text-gray-400 whitespace-nowrap">{r.created_at?.slice(0,10)}</td>
+                    <td className="px-3 py-2.5"><StatusBadge status={r.status} /></td>
+                    <td className="px-3 py-2.5 text-gray-400">
+                      {r.request_documents?.length > 0 && <span title="Has attachments">📎</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {filtered.length === 0 && (
+              <div className="text-center text-gray-400 py-10 text-sm">No requests found.</div>
+            )}
           </div>
         </>
       )}
