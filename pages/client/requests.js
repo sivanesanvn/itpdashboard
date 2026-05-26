@@ -8,6 +8,7 @@ const ACTIVE_STATUSES = NDT_STATUSES.filter(s => !['Report accepted','Cancelled'
 const NAV = [
   { href: '/client/requests',     label: 'Dashboard',    icon: '📊' },
   { href: '/client/all-requests', label: 'All Requests', icon: '📋' },
+  { href: '/client/schedule',     label: 'Schedule',     icon: '📅' },
   { href: '/client/new',          label: 'New Request',  icon: '➕' },
 ]
 
