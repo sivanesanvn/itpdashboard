@@ -93,6 +93,12 @@ export default function ClientRequests() {
   const awaitingReview = requests.filter(r => r.status === 'Draft Report Submitted')
   const completed = requests.filter(r => r.status === 'Report accepted')
 
+  const scheduled = requests.filter(r => r.scheduled_date)
+  const scheduledGrouped = scheduled.reduce((acc, r) => {
+    if (!acc[r.scheduled_date]) acc[r.scheduled_date] = []
+    acc[r.scheduled_date].push(r); return acc
+  }, {})
+
   const nav = [
     { href: '/client/requests', label: 'Dashboard', icon: '📊' },
     { href: '/client/new', label: 'New Request', icon: '➕' },
@@ -103,11 +109,11 @@ export default function ClientRequests() {
       {/* Tab switcher */}
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex gap-1">
-          {['dashboard','requests'].map(t => (
+          {['dashboard','requests','schedule'].map(t => (
             <button key={t} onClick={() => setActiveTab(t)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
                 ${activeTab === t ? 'bg-blue-700 text-white' : 'bg-white border border-gray-200 text-gray-600'}`}>
-              {t === 'dashboard' ? '📊 Dashboard' : `📋 All Requests (${requests.length})`}
+              {t === 'dashboard' ? '📊 Dashboard' : t === 'requests' ? `📋 All Requests (${requests.length})` : `📅 Schedule (${scheduled.length})`}
             </button>
           ))}
         </div>
@@ -300,6 +306,44 @@ export default function ClientRequests() {
                   </div>
                 ))}
               </div>
+          }
+        </>
+      )}
+
+      {/* SCHEDULE */}
+      {activeTab === 'schedule' && (
+        <>
+          {Object.keys(scheduledGrouped).length === 0
+            ? <div className="card text-center text-gray-400 py-10">No scheduled jobs yet.</div>
+            : Object.keys(scheduledGrouped).sort().map(date => (
+              <div key={date} className="mb-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="bg-blue-700 text-white px-2 py-0.5 rounded text-xs font-semibold">{date}</span>
+                  <span className="text-xs text-gray-400">{scheduledGrouped[date].length} job{scheduledGrouped[date].length > 1 ? 's' : ''}</span>
+                </div>
+                <div className="space-y-2">
+                  {scheduledGrouped[date].map(r => (
+                    <div key={r.id} className="card cursor-pointer hover:shadow-sm transition-all hover:border-blue-200"
+                      onClick={() => { setActiveTab('requests'); setTimeout(() => openRequest(r), 100) }}>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-sm text-blue-700">{r.request_no}</span>
+                        <StatusBadge status={r.status} />
+                        {r.job_category && <span className="badge bg-gray-100 text-gray-600 text-xs">{r.job_category}</span>}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {r.ndt_method}{r.location ? ` · ${r.location}` : ''}{r.equipment_no ? ` · ${r.equipment_no}` : ''}
+                      </div>
+                      {r.support_jobs?.map(sj => (
+                        <div key={sj.id} className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
+                          <span>{sj.job_type}:</span><StatusBadge status={sj.status} />
+                        </div>
+                      ))}
+                      {r.manager_notes && <p className="text-xs text-gray-400 italic mt-1.5">📝 {r.manager_notes}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
           }
         </>
       )}
