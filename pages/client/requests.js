@@ -9,6 +9,17 @@ import RequestComments from '../../components/RequestComments'
 
 const ACTIVE_STATUSES = NDT_STATUSES.filter(s => !['Report accepted','Cancelled'].includes(s))
 
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
+function toDateStr(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
+function calDays(year, month) {
+  let dow = new Date(year, month, 1).getDay(); dow = dow === 0 ? 6 : dow - 1
+  const last = new Date(year, month + 1, 0).getDate()
+  const days = Array(dow).fill(null)
+  for (let d = 1; d <= last; d++) days.push(d)
+  while (days.length % 7 !== 0) days.push(null)
+  return days
+}
+
 export default function ClientRequests() {
   const router = useRouter()
   const [profile, setProfile] = useState(null)
@@ -22,6 +33,8 @@ export default function ClientRequests() {
   const [filters, setFilters] = useState({ status: '', category: '', dateFrom: '', dateTo: '', equipment: '', requestedBy: '' })
   const [showFilters, setShowFilters] = useState(false)
   const [acting, setActing] = useState(false)
+  const [calDate, setCalDate] = useState(() => new Date())
+  const [calDay, setCalDay] = useState(null)
 
   useEffect(() => { init() }, [])
 
@@ -311,18 +324,60 @@ export default function ClientRequests() {
       )}
 
       {/* SCHEDULE */}
-      {activeTab === 'schedule' && (
-        <>
-          {Object.keys(scheduledGrouped).length === 0
-            ? <div className="card text-center text-gray-400 py-10">No scheduled jobs yet.</div>
-            : Object.keys(scheduledGrouped).sort().map(date => (
-              <div key={date} className="mb-5">
+      {activeTab === 'schedule' && (() => {
+        const todayStr = toDateStr(new Date())
+        const days = calDays(calDate.getFullYear(), calDate.getMonth())
+        return (
+          <>
+            <div className="card mb-3">
+              <div className="flex items-center justify-between mb-3">
+                <button onClick={() => { setCalDate(d => new Date(d.getFullYear(), d.getMonth()-1, 1)); setCalDay(null) }}
+                  className="btn btn-ghost text-base px-3">‹</button>
+                <span className="font-semibold text-sm">{MONTH_NAMES[calDate.getMonth()]} {calDate.getFullYear()}</span>
+                <button onClick={() => { setCalDate(d => new Date(d.getFullYear(), d.getMonth()+1, 1)); setCalDay(null) }}
+                  className="btn btn-ghost text-base px-3">›</button>
+              </div>
+              <div className="grid grid-cols-7 mb-1">
+                {['Mo','Tu','We','Th','Fr','Sa','Su'].map(d => (
+                  <div key={d} className="text-center text-xs text-gray-400 font-medium py-1">{d}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-0.5">
+                {days.map((day, i) => {
+                  if (!day) return <div key={i} className="min-h-[44px]" />
+                  const dateStr = toDateStr(new Date(calDate.getFullYear(), calDate.getMonth(), day))
+                  const jobs = scheduledGrouped[dateStr] || []
+                  const isToday = dateStr === todayStr
+                  const isSelected = calDay === dateStr
+                  return (
+                    <div key={i}
+                      onClick={() => jobs.length > 0 && setCalDay(isSelected ? null : dateStr)}
+                      className={`rounded-lg p-1 min-h-[44px] transition-colors text-center
+                        ${jobs.length > 0 ? 'cursor-pointer' : ''}
+                        ${isToday ? 'bg-blue-700' : isSelected ? 'bg-blue-50 border border-blue-200' : jobs.length > 0 ? 'hover:bg-blue-50' : ''}`}>
+                      <div className={`text-xs font-medium mt-0.5 ${isToday ? 'text-white' : 'text-gray-700'}`}>{day}</div>
+                      {jobs.length > 0 && (
+                        <div className="mt-0.5 flex justify-center">
+                          <span className={`text-xs font-semibold rounded-full w-4 h-4 flex items-center justify-center
+                            ${isToday ? 'bg-white/30 text-white' : 'bg-blue-100 text-blue-700'}`}>
+                            {jobs.length}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {calDay && scheduledGrouped[calDay] ? (
+              <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="bg-blue-700 text-white px-2 py-0.5 rounded text-xs font-semibold">{date}</span>
-                  <span className="text-xs text-gray-400">{scheduledGrouped[date].length} job{scheduledGrouped[date].length > 1 ? 's' : ''}</span>
+                  <span className="bg-blue-700 text-white px-2 py-0.5 rounded text-xs font-semibold">{calDay}</span>
+                  <span className="text-xs text-gray-400">{scheduledGrouped[calDay].length} job{scheduledGrouped[calDay].length > 1 ? 's' : ''}</span>
                 </div>
                 <div className="space-y-2">
-                  {scheduledGrouped[date].map(r => (
+                  {scheduledGrouped[calDay].map(r => (
                     <div key={r.id} className="card cursor-pointer hover:shadow-sm transition-all hover:border-blue-200"
                       onClick={() => { setActiveTab('requests'); setTimeout(() => openRequest(r), 100) }}>
                       <div className="flex items-center gap-2 flex-wrap">
@@ -343,10 +398,14 @@ export default function ClientRequests() {
                   ))}
                 </div>
               </div>
-            ))
-          }
-        </>
-      )}
+            ) : (
+              scheduled.length > 0
+                ? <div className="text-center text-xs text-gray-400 py-4">Tap a highlighted date to view jobs.</div>
+                : <div className="card text-center text-gray-400 py-8 text-sm">No scheduled jobs yet.</div>
+            )}
+          </>
+        )
+      })()}
 
       {/* DETAIL DRAWER */}
       {selected && profile && (
