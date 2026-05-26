@@ -5,8 +5,9 @@ import MethodSelect from '../../components/MethodSelect'
 import Layout from '../../components/Layout'
 
 const NAV = [
-  { href: '/client/requests', label: 'My Requests', icon: '📋' },
-  { href: '/client/new',      label: 'New Request',  icon: '➕' },
+  { href: '/client/requests',  label: 'My Requests', icon: '📋' },
+  { href: '/client/new',       label: 'New Request',  icon: '➕' },
+  { href: '/client/schedule',  label: 'Schedule',     icon: '📅' },
 ]
 
 export default function ClientNew() {

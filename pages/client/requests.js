@@ -94,8 +94,9 @@ export default function ClientRequests() {
   const completed = requests.filter(r => r.status === 'Report accepted')
 
   const nav = [
-    { href: '/client/requests', label: 'Dashboard', icon: '📊' },
-    { href: '/client/new', label: 'New Request', icon: '➕' },
+    { href: '/client/requests',  label: 'Dashboard',   icon: '📊' },
+    { href: '/client/new',       label: 'New Request',  icon: '➕' },
+    { href: '/client/schedule',  label: 'Schedule',     icon: '📅' },
   ]
 
   return (
