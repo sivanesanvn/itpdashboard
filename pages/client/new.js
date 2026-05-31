@@ -97,7 +97,6 @@ export default function ClientNew() {
       contact_email:     s1.contact_email,
       requested_by_id:   user.id,
       requested_by_name: s1.requester_name || profile.full_name,
-      requester_email:   s1.requester_email,
       ndt_method:        s1.ndt_method,
       scope_qty:         s1.scope_qty,
       description:       s1.description,
