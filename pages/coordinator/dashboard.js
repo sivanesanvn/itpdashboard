@@ -418,7 +418,7 @@ export default function CoordinatorDashboard() {
       )}
 
       {printing && selected && (
-        <PrintRequest request={{ ...selected, support_jobs: selected.support_jobs || [] }}
+        <PrintRequest request={{ ...selected, support_jobs: selected.support_jobs || [], documents: docs }}
           onClose={() => setPrinting(false)} />
       )}
     </Layout>
