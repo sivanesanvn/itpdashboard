@@ -205,6 +205,11 @@ export default function PrintRequest({ request: r, onClose }) {
 
             </div>
 
+            {/* Computer-generated notice */}
+            <div className="px-6 py-2 border-t border-gray-100 text-center text-[9px] text-gray-400 italic">
+              This document is computer-generated and therefore does not require an authorized signature.
+            </div>
+
             {/* Footer */}
             <div className="px-6 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl flex justify-between items-center text-[10px] text-gray-400">
               <span>NDT Portal · Cutech · Singapore · Inspection Management System</span>
@@ -432,13 +437,9 @@ function generatePrintHTML(r, si) {
     <div style="display:flex;align-items:flex-start">${timelineHTML}</div>
   </div>
 
-  <!-- Signature strip -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;margin-top:24px">
-    ${['Prepared By (Requester)', 'Reviewed By (Manager)', 'Acknowledged By (Client)'].map(label => `
-      <div>
-        <div style="font-size:9px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:22px">${label}</div>
-        <div style="border-top:1px solid #374151;padding-top:4px;font-size:9px;color:#9ca3af">Name &amp; Signature / Date</div>
-      </div>`).join('')}
+  <!-- Computer-generated notice -->
+  <div style="text-align:center;font-size:9px;color:#6b7280;font-style:italic;margin-bottom:10px;padding:6px 0;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb">
+    This document is computer-generated and therefore does not require an authorized signature.
   </div>
 
   <!-- Footer -->
