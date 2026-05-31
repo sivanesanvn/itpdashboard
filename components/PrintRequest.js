@@ -332,7 +332,7 @@ function generatePrintHTML(r, si) {
 <meta charset="UTF-8">
 <title>NDT Inspection Request — ${r.request_no}</title>
 <style>
-  @page { size: A4; margin: 20mm 20mm 20mm 25mm; }
+  @page { size: A4; margin: 25mm 25mm 25mm 25mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; font-size: 11px; color: #111; background: #fff; }
   @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
