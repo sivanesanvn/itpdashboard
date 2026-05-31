@@ -40,7 +40,7 @@ export default function PrintRequest({ request: r, onClose }) {
             {/* Header band */}
             <div className="bg-[#185FA5] text-white px-6 py-4 rounded-t-xl flex items-start justify-between">
               <div>
-                <div className="text-xs font-medium opacity-75 uppercase tracking-widest mb-1">Cutech · NDT Portal · Singapore</div>
+                <div className="text-xs font-medium opacity-75 uppercase tracking-widest mb-1">NDT Portal · Singapore</div>
                 <div className="text-lg font-bold leading-tight">NDT Inspection Request</div>
               </div>
               <div className="text-right">
@@ -59,7 +59,6 @@ export default function PrintRequest({ request: r, onClose }) {
               {r.priority && r.priority !== 'Normal' && (
                 <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200">⚡ {r.priority}</span>
               )}
-              <span className="ml-auto text-xs text-gray-400">Created: {createdDate}</span>
             </div>
 
             <div className="p-6 space-y-5">
@@ -343,7 +342,7 @@ function generatePrintHTML(r, si) {
   <!-- Header -->
   <div style="background:#185FA5;color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0">
     <div>
-      <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;opacity:.75;margin-bottom:3px">Cutech · NDT Portal · Singapore · Complete Solution Provider</div>
+      <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;opacity:.75;margin-bottom:3px">NDT Portal · Singapore</div>
       <div style="font-size:20px;font-weight:900;letter-spacing:-.3px">NDT Inspection Request</div>
     </div>
     <div style="text-align:right">
@@ -358,7 +357,6 @@ function generatePrintHTML(r, si) {
     <span style="background:#185FA5;color:#fff;padding:2px 10px;border-radius:999px;font-size:10px;font-weight:700">${r.status}</span>
     ${r.high_temp ? `<span style="background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;padding:2px 10px;border-radius:999px;font-size:10px;font-weight:700">🌡️ High Temperature Job</span>` : ''}
     ${r.priority && r.priority !== 'Normal' ? `<span style="background:#ffedd5;color:#c2410c;border:1px solid #fdba74;padding:2px 10px;border-radius:999px;font-size:10px;font-weight:700">⚡ ${r.priority}</span>` : ''}
-    <span style="margin-left:auto;font-size:9px;color:#374151">Request No: <b>${r.request_no}</b> &nbsp;|&nbsp; Created: <b>${createdDate}</b></span>
   </div>
 
   <!-- Section A: Requester -->
