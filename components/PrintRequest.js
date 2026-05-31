@@ -54,9 +54,6 @@ export default function PrintRequest({ request: r, onClose }) {
             <div className="flex items-center gap-2 px-6 py-2.5 bg-gray-50 border-b border-gray-200 flex-wrap">
               <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mr-1">Status:</span>
               <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-700 text-white">{r.status}</span>
-              {r.high_temp && (
-                <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200">🌡️ High Temperature Job</span>
-              )}
               {r.priority && r.priority !== 'Normal' && (
                 <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200">⚡ {r.priority}</span>
               )}
@@ -103,11 +100,6 @@ export default function PrintRequest({ request: r, onClose }) {
                   {r.scheduled_date && <Field label="Scheduled Date" value={r.scheduled_date} />}
                   {r.tech_name && <Field label="Assigned Technician" value={r.tech_name} />}
                 </TwoCol>
-                {r.high_temp && (
-                  <div className="mt-2 flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-700 font-medium">
-                    🌡️ This job involves high temperature surfaces (above 50°C). Appropriate PPE and precautions required.
-                  </div>
-                )}
               </Section>
 
               {/* Section E: Technical */}
@@ -128,50 +120,30 @@ export default function PrintRequest({ request: r, onClose }) {
               {/* Section F: Support Work */}
               {r.support_jobs?.length > 0 && (
                 <Section title="F. Support Work">
-                  <table className="w-full text-xs border border-gray-200 rounded-lg overflow-hidden">
-                    <thead>
-                      <tr className="bg-gray-50 text-gray-500 uppercase text-[10px] tracking-wider">
-                        <th className="text-left px-3 py-2 font-semibold">Type</th>
-                        <th className="text-left px-3 py-2 font-semibold">Contractor</th>
-                        <th className="text-left px-3 py-2 font-semibold">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {r.support_jobs.map(sj => (
-                        <tr key={sj.id} className="border-t border-gray-100">
-                          <td className="px-3 py-1.5 font-medium">{sj.job_type}</td>
-                          <td className="px-3 py-1.5 text-gray-500">{sj.contractor_name || '—'}</td>
-                          <td className="px-3 py-1.5">{sj.status}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <div className="space-y-1">
+                    {r.support_jobs.map(sj => (
+                      <div key={sj.id} className="flex gap-4 text-xs">
+                        <span className="font-medium w-32">{sj.job_type}</span>
+                        <span className="text-gray-500">{sj.contractor_name || '—'}</span>
+                        <span className="text-gray-500 ml-auto">{sj.status}</span>
+                      </div>
+                    ))}
+                  </div>
                 </Section>
               )}
 
               {/* Section G: Attachments */}
               {r.documents?.length > 0 && (
                 <Section title="G. Attached Documents">
-                  <table className="w-full text-xs border border-gray-200 rounded-lg overflow-hidden">
-                    <thead>
-                      <tr className="bg-gray-50 text-gray-500 uppercase text-[10px] tracking-wider">
-                        <th className="text-left px-3 py-2 font-semibold">#</th>
-                        <th className="text-left px-3 py-2 font-semibold">File Name</th>
-                        <th className="text-left px-3 py-2 font-semibold">Type</th>
-                        <th className="text-left px-3 py-2 font-semibold">Uploaded By</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {r.documents.map((doc, i) => (
-                        <tr key={doc.id} className="border-t border-gray-100">
-                          <td className="px-3 py-1.5 text-gray-400">{i + 1}</td>
-                          <td className="px-3 py-1.5 font-medium">📄 {doc.file_name}</td>
-                          <td className="px-3 py-1.5 text-gray-500 capitalize">{doc.file_type}</td>
-                          <td className="px-3 py-1.5 text-gray-500">{doc.uploader_name}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <div className="space-y-1">
+                    {r.documents.map((doc, i) => (
+                      <div key={doc.id} className="flex gap-2 text-xs">
+                        <span className="text-gray-400 w-4">{i + 1}.</span>
+                        <span className="font-medium flex-1">{doc.file_name}</span>
+                        <span className="text-gray-400">{doc.uploader_name}</span>
+                      </div>
+                    ))}
+                  </div>
                 </Section>
               )}
 
@@ -286,44 +258,23 @@ function generatePrintHTML(r, si) {
   </div>` : ''
 
   const attachmentsHTML = r.documents?.length ? `
-    <div style="margin-bottom:20px">
+    <div style="margin-bottom:16px">
       ${sectionTitle('G', 'Attached Documents')}
-      <table style="width:100%;border-collapse:collapse;font-size:10px;border:1px solid #e5e7eb">
-        <thead><tr style="background:#f3f4f6">
-          <th style="text-align:left;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:9px;text-transform:uppercase">#</th>
-          <th style="text-align:left;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:9px;text-transform:uppercase">File Name</th>
-          <th style="text-align:left;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:9px;text-transform:uppercase">Type</th>
-          <th style="text-align:left;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:9px;text-transform:uppercase">Uploaded By</th>
-        </tr></thead>
-        <tbody>${(r.documents || []).map((doc, i) => `<tr style="border-top:1px solid #f3f4f6">
-          <td style="padding:5px 8px;color:#9ca3af">${i + 1}</td>
-          <td style="padding:5px 8px;font-weight:600">${doc.file_name}</td>
-          <td style="padding:5px 8px;color:#6b7280;text-transform:capitalize">${doc.file_type}</td>
-          <td style="padding:5px 8px;color:#6b7280">${doc.uploader_name || '—'}</td>
-        </tr>`).join('')}</tbody>
-      </table>
+      ${(r.documents || []).map((doc, i) => `<div style="display:flex;gap:8px;font-size:10px;padding:2px 0">
+        <span style="color:#9ca3af;width:16px">${i + 1}.</span>
+        <span style="font-weight:600;flex:1">${doc.file_name}</span>
+        <span style="color:#6b7280">${doc.uploader_name || '—'}</span>
+      </div>`).join('')}
     </div>` : ''
 
   const supportHTML = r.support_jobs?.length ? `
-    <div style="margin-bottom:20px">
+    <div style="margin-bottom:16px">
       ${sectionTitle('F', 'Support Work')}
-      <table style="width:100%;border-collapse:collapse;font-size:10px;border:1px solid #e5e7eb">
-        <thead><tr style="background:#f3f4f6">
-          <th style="text-align:left;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:9px;text-transform:uppercase">Type</th>
-          <th style="text-align:left;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:9px;text-transform:uppercase">Contractor</th>
-          <th style="text-align:left;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:9px;text-transform:uppercase">Status</th>
-        </tr></thead>
-        <tbody>${r.support_jobs.map(sj => `<tr style="border-top:1px solid #f3f4f6">
-          <td style="padding:5px 8px;font-weight:600">${sj.job_type}</td>
-          <td style="padding:5px 8px;color:#6b7280">${sj.contractor_name || '—'}</td>
-          <td style="padding:5px 8px">${sj.status}</td>
-        </tr>`).join('')}</tbody>
-      </table>
-    </div>` : ''
-
-  const highTempBanner = r.high_temp ? `
-    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:8px 12px;font-size:10px;color:#b91c1c;font-weight:600;margin-top:8px">
-      🌡️ HIGH TEMPERATURE JOB — Inspection area involves surfaces above 50°C. Appropriate PPE and safety precautions are mandatory.
+      ${r.support_jobs.map(sj => `<div style="display:flex;gap:16px;font-size:10px;padding:2px 0">
+        <span style="font-weight:600;width:140px">${sj.job_type}</span>
+        <span style="color:#6b7280;flex:1">${sj.contractor_name || '—'}</span>
+        <span style="color:#6b7280">${sj.status}</span>
+      </div>`).join('')}
     </div>` : ''
 
   return `<!DOCTYPE html>
@@ -332,7 +283,7 @@ function generatePrintHTML(r, si) {
 <meta charset="UTF-8">
 <title>NDT Inspection Request — ${r.request_no}</title>
 <style>
-  @page { size: A4; margin: 25mm 25mm 25mm 25mm; }
+  @page { size: A4; margin: 15mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; font-size: 11px; color: #111; background: #fff; }
   @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
@@ -357,7 +308,6 @@ function generatePrintHTML(r, si) {
   <div style="background:#f9fafb;padding:7px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e5e7eb;flex-wrap:wrap;margin-bottom:16px">
     <span style="font-size:9px;font-weight:700;color:#1e3a5f;text-transform:uppercase;letter-spacing:.06em">Status:</span>
     <span style="background:#185FA5;color:#fff;padding:2px 10px;border-radius:999px;font-size:10px;font-weight:700">${r.status}</span>
-    ${r.high_temp ? `<span style="background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;padding:2px 10px;border-radius:999px;font-size:10px;font-weight:700">🌡️ High Temperature Job</span>` : ''}
     ${r.priority && r.priority !== 'Normal' ? `<span style="background:#ffedd5;color:#c2410c;border:1px solid #fdba74;padding:2px 10px;border-radius:999px;font-size:10px;font-weight:700">⚡ ${r.priority}</span>` : ''}
   </div>
 
@@ -404,7 +354,6 @@ function generatePrintHTML(r, si) {
       ${cell('Scheduled Date', r.scheduled_date)}
       ${cell('Assigned Technician', r.tech_name)}
     ${grid2close}
-    ${highTempBanner}
   </div>
 
   ${r.step2_complete ? `
