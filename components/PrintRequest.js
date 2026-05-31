@@ -97,19 +97,19 @@ export default function PrintRequest({ request: r, onClose }) {
                 <TwoCol>
                   <Field label="Date Needed By" value={r.date_needed} />
                   <Field label="Priority" value={r.priority} />
-                  <Field label="High Temperature Job" value={r.high_temp ? 'Yes — surfaces above 50°C' : 'No'} />
+                  {r.high_temp && <Field label="High Temperature Job" value="Yes — surfaces above 50°C" span />}
                   {r.scheduled_date && <Field label="Scheduled Date" value={r.scheduled_date} />}
                   {r.tech_name && <Field label="Assigned Technician" value={r.tech_name} />}
                 </TwoCol>
               </Section>
 
-              {/* Section E: Support Work Requested */}
-              {(r.needs_scaffold || r.needs_insulation || r.needs_painting) && (
-                <Section title="E. Support Work Requested">
+              {/* Support Work */}
+              {(r.needs_scaffold || r.needs_insulation || r.needs_painting || r.support_jobs?.length > 0) && (
+                <Section title="E. Support Work">
                   <div className="space-y-1">
-                    {r.needs_scaffold   && <div className="text-xs font-medium">🏗️ Scaffold erection / dismantling</div>}
-                    {r.needs_insulation && <div className="text-xs font-medium">🧱 Insulation removal &amp; reinstatement</div>}
-                    {r.needs_painting   && <div className="text-xs font-medium">🎨 Painting / surface preparation</div>}
+                    {r.needs_scaffold   && <div className="text-xs font-medium">🏗️ Scaffold erection / dismantling{r.support_jobs?.find(s=>s.job_type==='Scaffold') ? ` — ${r.support_jobs.find(s=>s.job_type==='Scaffold').status}` : ''}</div>}
+                    {r.needs_insulation && <div className="text-xs font-medium">🧱 Insulation removal &amp; reinstatement{r.support_jobs?.find(s=>s.job_type==='Insulation') ? ` — ${r.support_jobs.find(s=>s.job_type==='Insulation').status}` : ''}</div>}
+                    {r.needs_painting   && <div className="text-xs font-medium">🎨 Painting / surface preparation{r.support_jobs?.find(s=>s.job_type==='Painting') ? ` — ${r.support_jobs.find(s=>s.job_type==='Painting').status}` : ''}</div>}
                   </div>
                 </Section>
               )}
@@ -129,24 +129,9 @@ export default function PrintRequest({ request: r, onClose }) {
                 </Section>
               )}
 
-              {/* Section G: Support Jobs */}
-              {r.support_jobs?.length > 0 && (
-                <Section title="G. Support Work Status">
-                  <div className="space-y-1">
-                    {r.support_jobs.map(sj => (
-                      <div key={sj.id} className="flex gap-4 text-xs">
-                        <span className="font-medium w-32">{sj.job_type}</span>
-                        <span className="text-gray-500">{sj.contractor_name || '—'}</span>
-                        <span className="text-gray-500 ml-auto">{sj.status}</span>
-                      </div>
-                    ))}
-                  </div>
-                </Section>
-              )}
-
-              {/* Section H: Attachments */}
+              {/* Section F: Attachments */}
               {r.documents?.length > 0 && (
-                <Section title="H. Attached Documents">
+                <Section title="F. Attached Documents">
                   <div className="space-y-1">
                     {r.documents.map((doc, i) => (
                       <div key={doc.id} className="flex gap-2 text-xs">
@@ -249,7 +234,7 @@ function generatePrintHTML(r, si) {
 
   const attachmentsHTML = r.documents?.length ? `
     <div style="margin-bottom:16px">
-      ${sectionTitle('H', 'Attached Documents')}
+      ${sectionTitle('F', 'Attached Documents')}
       ${(r.documents || []).map((doc, i) => `<div style="display:flex;gap:8px;font-size:10px;padding:2px 0">
         <span style="color:#9ca3af;width:16px">${i + 1}.</span>
         <span style="font-weight:600;flex:1">${doc.file_name}</span>
@@ -257,14 +242,20 @@ function generatePrintHTML(r, si) {
       </div>`).join('')}
     </div>` : ''
 
-  const supportHTML = r.support_jobs?.length ? `
+  const supportTypes = [
+    r.needs_scaffold   ? { type: 'Scaffold',   label: '🏗️ Scaffold erection / dismantling' }   : null,
+    r.needs_insulation ? { type: 'Insulation', label: '🧱 Insulation removal & reinstatement' } : null,
+    r.needs_painting   ? { type: 'Painting',   label: '🎨 Painting / surface preparation' }     : null,
+  ].filter(Boolean)
+
+  const supportHTML = supportTypes.length ? `
     <div style="margin-bottom:16px">
-      ${sectionTitle('G', 'Support Work Status')}
-      ${r.support_jobs.map(sj => `<div style="display:flex;gap:16px;font-size:10px;padding:2px 0">
-        <span style="font-weight:600;width:140px">${sj.job_type}</span>
-        <span style="color:#6b7280;flex:1">${sj.contractor_name || '—'}</span>
-        <span style="color:#6b7280">${sj.status}</span>
-      </div>`).join('')}
+      ${sectionTitle('E', 'Support Work')}
+      ${supportTypes.map(({ type, label }) => {
+        const job = r.support_jobs?.find(s => s.job_type === type)
+        const detail = job ? ` &nbsp;<span style="color:#6b7280;font-weight:400">${job.contractor_name ? job.contractor_name + ' — ' : ''}${job.status}</span>` : ''
+        return `<div style="font-size:10px;font-weight:600;padding:2px 0">${label}${detail}</div>`
+      }).join('')}
     </div>` : ''
 
   return `<!DOCTYPE html>
@@ -341,20 +332,13 @@ function generatePrintHTML(r, si) {
     ${grid2open}
       ${cell('Date Needed By', r.date_needed)}
       ${cell('Priority', r.priority)}
-      ${cell('High Temperature Job', r.high_temp ? 'Yes — surfaces above 50°C' : 'No')}
+      ${r.high_temp ? cell('High Temperature Job', 'Yes — surfaces above 50°C') : ''}
       ${cell('Scheduled Date', r.scheduled_date)}
       ${cell('Assigned Technician', r.tech_name)}
     ${grid2close}
   </div>
 
-  ${(r.needs_scaffold || r.needs_insulation || r.needs_painting) ? `
-  <!-- Section E: Support Work Requested -->
-  <div style="margin-bottom:18px">
-    ${sectionTitle('E', 'Support Work Requested')}
-    ${r.needs_scaffold   ? `<div style="font-size:11px;font-weight:600;padding:2px 0">🏗️ Scaffold erection / dismantling</div>` : ''}
-    ${r.needs_insulation ? `<div style="font-size:11px;font-weight:600;padding:2px 0">🧱 Insulation removal &amp; reinstatement</div>` : ''}
-    ${r.needs_painting   ? `<div style="font-size:11px;font-weight:600;padding:2px 0">🎨 Painting / surface preparation</div>` : ''}
-  </div>` : ''}
+  ${supportHTML}
 
   ${r.step2_complete ? `
   <!-- Section F: Technical -->
@@ -371,7 +355,6 @@ function generatePrintHTML(r, si) {
     ${grid2close}
   </div>` : ''}
 
-  ${supportHTML}
   ${attachmentsHTML}
 
   ${r.manager_notes ? `
