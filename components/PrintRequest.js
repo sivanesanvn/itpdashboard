@@ -44,6 +44,7 @@ export default function PrintRequest({ request: r, onClose }) {
                 <div className="text-lg font-bold leading-tight">NDT Inspection Request</div>
               </div>
               <div className="text-right">
+                <div className="text-[9px] font-semibold opacity-60 uppercase tracking-widest mb-0.5">Request ID</div>
                 <div className="text-2xl font-black tracking-tight">{r.request_no}</div>
                 <div className="text-xs opacity-70 mt-0.5">Issued: {createdDate}</div>
               </div>
@@ -346,6 +347,7 @@ function generatePrintHTML(r, si) {
       <div style="font-size:20px;font-weight:900;letter-spacing:-.3px">NDT Inspection Request</div>
     </div>
     <div style="text-align:right">
+      <div style="font-size:9px;font-weight:600;opacity:.6;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px">Request ID</div>
       <div style="font-size:26px;font-weight:900;letter-spacing:-1px">${r.request_no}</div>
       <div style="font-size:9px;opacity:.75;margin-top:2px">Issued: ${createdDate}</div>
     </div>
