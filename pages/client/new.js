@@ -191,10 +191,9 @@ export default function ClientNew() {
               </div>
               <div>
                 <label className="label">Email</label>
-                <input className="input" type="email" placeholder="your@email.com"
-                  value={s1.requester_email}
-                  onChange={e => setS1(p => ({...p, requester_email: e.target.value}))} />
-                <p className="text-xs text-gray-400 mt-1">Pre-filled from your account</p>
+                <input className="input bg-gray-50 text-gray-500 cursor-not-allowed" type="email"
+                  value={s1.requester_email} readOnly />
+                <p className="text-xs text-gray-400 mt-1">Linked to your account — cannot be changed</p>
               </div>
             </div>
 
