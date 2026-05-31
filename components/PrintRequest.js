@@ -97,14 +97,26 @@ export default function PrintRequest({ request: r, onClose }) {
                 <TwoCol>
                   <Field label="Date Needed By" value={r.date_needed} />
                   <Field label="Priority" value={r.priority} />
+                  <Field label="High Temperature Job" value={r.high_temp ? 'Yes — surfaces above 50°C' : 'No'} />
                   {r.scheduled_date && <Field label="Scheduled Date" value={r.scheduled_date} />}
                   {r.tech_name && <Field label="Assigned Technician" value={r.tech_name} />}
                 </TwoCol>
               </Section>
 
-              {/* Section E: Technical */}
+              {/* Section E: Support Work Requested */}
+              {(r.needs_scaffold || r.needs_insulation || r.needs_painting) && (
+                <Section title="E. Support Work Requested">
+                  <div className="space-y-1">
+                    {r.needs_scaffold   && <div className="text-xs font-medium">🏗️ Scaffold erection / dismantling</div>}
+                    {r.needs_insulation && <div className="text-xs font-medium">🧱 Insulation removal &amp; reinstatement</div>}
+                    {r.needs_painting   && <div className="text-xs font-medium">🎨 Painting / surface preparation</div>}
+                  </div>
+                </Section>
+              )}
+
+              {/* Section F: Technical */}
               {r.step2_complete && (
-                <Section title="E. Technical Details">
+                <Section title="F. Technical Details">
                   <TwoCol>
                     <Field label="Material / Component Type" value={r.material} />
                     <Field label="Wall Thickness (mm)" value={r.thickness_mm ? r.thickness_mm + ' mm' : null} />
@@ -117,9 +129,9 @@ export default function PrintRequest({ request: r, onClose }) {
                 </Section>
               )}
 
-              {/* Section F: Support Work */}
+              {/* Section G: Support Jobs */}
               {r.support_jobs?.length > 0 && (
-                <Section title="F. Support Work">
+                <Section title="G. Support Work Status">
                   <div className="space-y-1">
                     {r.support_jobs.map(sj => (
                       <div key={sj.id} className="flex gap-4 text-xs">
@@ -132,9 +144,9 @@ export default function PrintRequest({ request: r, onClose }) {
                 </Section>
               )}
 
-              {/* Section G: Attachments */}
+              {/* Section H: Attachments */}
               {r.documents?.length > 0 && (
-                <Section title="G. Attached Documents">
+                <Section title="H. Attached Documents">
                   <div className="space-y-1">
                     {r.documents.map((doc, i) => (
                       <div key={doc.id} className="flex gap-2 text-xs">
@@ -237,7 +249,7 @@ function generatePrintHTML(r, si) {
 
   const attachmentsHTML = r.documents?.length ? `
     <div style="margin-bottom:16px">
-      ${sectionTitle('G', 'Attached Documents')}
+      ${sectionTitle('H', 'Attached Documents')}
       ${(r.documents || []).map((doc, i) => `<div style="display:flex;gap:8px;font-size:10px;padding:2px 0">
         <span style="color:#9ca3af;width:16px">${i + 1}.</span>
         <span style="font-weight:600;flex:1">${doc.file_name}</span>
@@ -247,7 +259,7 @@ function generatePrintHTML(r, si) {
 
   const supportHTML = r.support_jobs?.length ? `
     <div style="margin-bottom:16px">
-      ${sectionTitle('F', 'Support Work')}
+      ${sectionTitle('G', 'Support Work Status')}
       ${r.support_jobs.map(sj => `<div style="display:flex;gap:16px;font-size:10px;padding:2px 0">
         <span style="font-weight:600;width:140px">${sj.job_type}</span>
         <span style="color:#6b7280;flex:1">${sj.contractor_name || '—'}</span>
@@ -329,15 +341,25 @@ function generatePrintHTML(r, si) {
     ${grid2open}
       ${cell('Date Needed By', r.date_needed)}
       ${cell('Priority', r.priority)}
+      ${cell('High Temperature Job', r.high_temp ? 'Yes — surfaces above 50°C' : 'No')}
       ${cell('Scheduled Date', r.scheduled_date)}
       ${cell('Assigned Technician', r.tech_name)}
     ${grid2close}
   </div>
 
-  ${r.step2_complete ? `
-  <!-- Section E: Technical -->
+  ${(r.needs_scaffold || r.needs_insulation || r.needs_painting) ? `
+  <!-- Section E: Support Work Requested -->
   <div style="margin-bottom:18px">
-    ${sectionTitle('E', 'Technical Details')}
+    ${sectionTitle('E', 'Support Work Requested')}
+    ${r.needs_scaffold   ? `<div style="font-size:11px;font-weight:600;padding:2px 0">🏗️ Scaffold erection / dismantling</div>` : ''}
+    ${r.needs_insulation ? `<div style="font-size:11px;font-weight:600;padding:2px 0">🧱 Insulation removal &amp; reinstatement</div>` : ''}
+    ${r.needs_painting   ? `<div style="font-size:11px;font-weight:600;padding:2px 0">🎨 Painting / surface preparation</div>` : ''}
+  </div>` : ''}
+
+  ${r.step2_complete ? `
+  <!-- Section F: Technical -->
+  <div style="margin-bottom:18px">
+    ${sectionTitle('F', 'Technical Details')}
     ${grid2open}
       ${cell('Material / Component Type', r.material)}
       ${cell('Wall Thickness', r.thickness_mm ? r.thickness_mm + ' mm' : null)}
