@@ -37,21 +37,21 @@ export default function PrintRequest({ request: r, onClose }) {
         <div className="p-6 bg-gray-100">
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm text-xs" style={{ fontFamily: 'Arial, sans-serif' }}>
 
-            {/* Header band */}
-            <div className="bg-[#185FA5] text-white px-6 py-4 rounded-t-xl flex items-start justify-between">
+            {/* Header */}
+            <div className="px-6 pt-5 pb-4 border-b-2 border-gray-800 flex items-start justify-between rounded-t-xl">
               <div>
-                <div className="text-xs font-medium opacity-75 uppercase tracking-widest mb-1">NDT Portal · Singapore</div>
-                <div className="text-lg font-bold leading-tight">NDT Inspection Request</div>
+                <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest mb-1">NDT Portal · Singapore</div>
+                <div className="text-xl font-black text-gray-900 leading-tight">NDT Inspection Request</div>
               </div>
               <div className="text-right">
-                <div className="text-[9px] font-semibold opacity-60 uppercase tracking-widest mb-0.5">Request ID</div>
-                <div className="text-2xl font-black tracking-tight">{r.request_no}</div>
-                <div className="text-xs opacity-70 mt-0.5">Issued: {createdDate}</div>
+                <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Request ID</div>
+                <div className="text-2xl font-black text-[#185FA5] tracking-tight">{r.request_no}</div>
+                <div className="text-[10px] text-gray-400 mt-0.5">Issued: {createdDate}</div>
               </div>
             </div>
 
             {/* Status + tags row */}
-            <div className="flex items-center gap-2 px-6 py-2.5 bg-blue-50 border-b border-blue-100 flex-wrap">
+            <div className="flex items-center gap-2 px-6 py-2.5 bg-gray-50 border-b border-gray-200 flex-wrap">
               <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mr-1">Status:</span>
               <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-700 text-white">{r.status}</span>
               {r.high_temp && (
@@ -341,20 +341,20 @@ function generatePrintHTML(r, si) {
 <body>
 
   <!-- Header -->
-  <div style="background:#185FA5;color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0">
+  <div style="padding:14px 20px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #111;margin-bottom:0">
     <div>
-      <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;opacity:.75;margin-bottom:3px">NDT Portal · Singapore</div>
-      <div style="font-size:20px;font-weight:900;letter-spacing:-.3px">NDT Inspection Request</div>
+      <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#9ca3af;margin-bottom:3px">NDT Portal · Singapore</div>
+      <div style="font-size:20px;font-weight:900;letter-spacing:-.3px;color:#111">NDT Inspection Request</div>
     </div>
     <div style="text-align:right">
-      <div style="font-size:9px;font-weight:600;opacity:.6;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px">Request ID</div>
-      <div style="font-size:26px;font-weight:900;letter-spacing:-1px">${r.request_no}</div>
-      <div style="font-size:9px;opacity:.75;margin-top:2px">Issued: ${createdDate}</div>
+      <div style="font-size:9px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px">Request ID</div>
+      <div style="font-size:26px;font-weight:900;letter-spacing:-1px;color:#185FA5">${r.request_no}</div>
+      <div style="font-size:9px;color:#9ca3af;margin-top:2px">Issued: ${createdDate}</div>
     </div>
   </div>
 
   <!-- Status bar -->
-  <div style="background:#dbeafe;padding:7px 20px;display:flex;align-items:center;gap:10px;border-bottom:2px solid #185FA5;flex-wrap:wrap;margin-bottom:16px">
+  <div style="background:#f9fafb;padding:7px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e5e7eb;flex-wrap:wrap;margin-bottom:16px">
     <span style="font-size:9px;font-weight:700;color:#1e3a5f;text-transform:uppercase;letter-spacing:.06em">Status:</span>
     <span style="background:#185FA5;color:#fff;padding:2px 10px;border-radius:999px;font-size:10px;font-weight:700">${r.status}</span>
     ${r.high_temp ? `<span style="background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;padding:2px 10px;border-radius:999px;font-size:10px;font-weight:700">🌡️ High Temperature Job</span>` : ''}
