@@ -40,7 +40,7 @@ export default function PrintRequest({ request: r, onClose }) {
             {/* Header */}
             <div className="px-6 pt-5 pb-4 border-b-2 border-gray-800 flex items-start justify-between rounded-t-xl">
               <div>
-                <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest mb-1">NDT Portal · Singapore</div>
+                <img src="/cutech_logo.png" alt="Cutech" style={{ height: '32px', width: 'auto', marginBottom: '6px' }} />
                 <div className="text-xl font-black text-gray-900 leading-tight">NDT Inspection Request</div>
               </div>
               <div className="text-right">
@@ -154,27 +154,6 @@ export default function PrintRequest({ request: r, onClose }) {
                 </Section>
               )}
 
-              {/* Status Timeline */}
-              <Section title="Request Progress">
-                <div className="flex items-start gap-0">
-                  {NDT_STATUSES.map((s, i) => {
-                    const done = i < si, active = i === si
-                    return (
-                      <div key={s} className="flex-1 flex flex-col items-center relative">
-                        {i < NDT_STATUSES.length - 1 && (
-                          <div className={`absolute top-2.5 left-1/2 w-full h-0.5 ${done ? 'bg-emerald-500' : 'bg-gray-200'}`} />
-                        )}
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold z-10 relative
-                          ${done ? 'bg-emerald-500 text-white' : active ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-400'}`}>
-                          {done ? '✓' : i + 1}
-                        </div>
-                        <div className={`text-[9px] mt-1 text-center leading-tight max-w-[52px] ${done || active ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>{s}</div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </Section>
-
             </div>
 
             {/* Computer-generated notice */}
@@ -183,8 +162,7 @@ export default function PrintRequest({ request: r, onClose }) {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl flex justify-between items-center text-[10px] text-gray-400">
-              <span>NDT Portal · Cutech · Singapore · Inspection Management System</span>
+            <div className="px-6 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl flex justify-end items-center text-[10px] text-gray-400">
               <span>Generated: {new Date().toLocaleString('en-SG')}</span>
             </div>
           </div>
@@ -294,7 +272,7 @@ function generatePrintHTML(r, si) {
   <!-- Header -->
   <div style="padding:14px 20px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #111;margin-bottom:0">
     <div>
-      <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#9ca3af;margin-bottom:3px">NDT Portal · Singapore</div>
+      <img src="/cutech_logo.png" alt="Cutech" style="height:28px;width:auto;margin-bottom:5px;display:block" />
       <div style="font-size:20px;font-weight:900;letter-spacing:-.3px;color:#111">NDT Inspection Request</div>
     </div>
     <div style="text-align:right">
@@ -380,20 +358,13 @@ function generatePrintHTML(r, si) {
     <div style="background:#fefce8;border:1px solid #fde68a;border-radius:6px;padding:8px 12px;font-size:11px">${r.manager_notes}</div>
   </div>` : ''}
 
-  <!-- Progress timeline -->
-  <div style="margin-bottom:18px">
-    ${sectionTitle('', 'Request Progress')}
-    <div style="display:flex;align-items:flex-start">${timelineHTML}</div>
-  </div>
-
   <!-- Computer-generated notice -->
   <div style="text-align:center;font-size:9px;color:#6b7280;font-style:italic;margin-bottom:10px;padding:6px 0;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb">
     This document is computer-generated and therefore does not require an authorized signature.
   </div>
 
   <!-- Footer -->
-  <div style="border-top:1px solid #e5e7eb;padding-top:8px;display:flex;justify-content:space-between;font-size:9px;color:#9ca3af">
-    <span>NDT Portal · Cutech · Singapore · Inspection Management System</span>
+  <div style="border-top:1px solid #e5e7eb;padding-top:8px;display:flex;justify-content:flex-end;font-size:9px;color:#9ca3af">
     <span>Generated: ${new Date().toLocaleString('en-SG')}</span>
   </div>
 
