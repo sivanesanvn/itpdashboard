@@ -79,7 +79,7 @@ export default function PrintRequest({ request: r, onClose }) {
               {/* Section B: Site */}
               <Section title="B. Site & Equipment">
                 <TwoCol>
-                  <Field label="Site / Plant Location" value={r.location} span />
+                  <Field label="Site / Plant Location / Unit No." value={r.location} />
                   <Field label="Equipment / Piping No." value={r.equipment_no} />
                   <Field label="Site Contact Person" value={r.contact_name} />
                   <Field label="Contact Phone / WhatsApp" value={r.contact_phone} />
@@ -332,7 +332,7 @@ function generatePrintHTML(r, si) {
 <meta charset="UTF-8">
 <title>NDT Inspection Request — ${r.request_no}</title>
 <style>
-  @page { size: A4; margin: 15mm 18mm; }
+  @page { size: A4; margin: 20mm 20mm 20mm 25mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; font-size: 11px; color: #111; background: #fff; }
   @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
@@ -378,7 +378,7 @@ function generatePrintHTML(r, si) {
   <div style="margin-bottom:18px">
     ${sectionTitle('B', 'Site & Equipment')}
     ${grid2open}
-      ${cellSpan('Site / Plant Location / Unit No.', r.location)}
+      ${cell('Site / Plant Location / Unit No.', r.location)}
       ${cell('Equipment / Piping No.', r.equipment_no)}
       ${cell('Site Contact Person', r.contact_name)}
       ${cell('Contact Phone / WhatsApp', r.contact_phone)}
