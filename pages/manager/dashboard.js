@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
-import { supabase, NDT_STATUSES, PRIORITY_COLOR, JOB_CATEGORIES } from '../../lib/supabase'
+import { supabase, NDT_STATUSES, PRIORITY_COLOR, JOB_CATEGORIES, NDT_METHODS } from '../../lib/supabase'
 import Layout from '../../components/Layout'
 import { StatusBadge } from '../../components/StatusBadge'
 import DonutChart from '../../components/DonutChart'
+import BarChart from '../../components/BarChart'
 
 export default function ManagerDashboard() {
   const router = useRouter()
@@ -181,6 +182,39 @@ export default function ManagerDashboard() {
               ))}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Method donut + requests over time */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div className="card">
+          <div className="section-title mb-3">By NDT Method</div>
+          <div className="flex items-center gap-4">
+            <DonutChart size={120} data={
+              NDT_METHODS.map((m, i) => ({
+                label: m,
+                value: periodRequests.filter(r => r.ndt_method === m).length,
+                color: `hsl(${(i * 360 / NDT_METHODS.length)},60%,48%)`,
+              }))
+            } />
+            <div className="flex flex-col gap-1 text-xs overflow-y-auto max-h-28">
+              {NDT_METHODS.map((m, i) => {
+                const count = periodRequests.filter(r => r.ndt_method === m).length
+                if (!count) return null
+                return (
+                  <div key={m} className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ background: `hsl(${(i * 360 / NDT_METHODS.length)},60%,48%)` }} />
+                    <span className="text-gray-600">{m}</span>
+                    <span className="font-semibold ml-auto pl-2">{count}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+        <div className="card">
+          <BarChart requests={requests} />
         </div>
       </div>
 
