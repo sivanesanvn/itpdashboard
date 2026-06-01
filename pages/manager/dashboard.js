@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
-import { supabase, NDT_STATUSES, PRIORITY_COLOR } from '../../lib/supabase'
+import { supabase, NDT_STATUSES, PRIORITY_COLOR, JOB_CATEGORIES } from '../../lib/supabase'
 import Layout from '../../components/Layout'
 import { StatusBadge } from '../../components/StatusBadge'
+import DonutChart from '../../components/DonutChart'
 
 export default function ManagerDashboard() {
   const router = useRouter()
@@ -127,6 +128,60 @@ export default function ManagerDashboard() {
             <div className="text-xs text-gray-500 mt-1">{s.label}</div>
           </div>
         ))}
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div className="card">
+          <div className="section-title mb-3">By Status</div>
+          <div className="flex items-center gap-4">
+            <DonutChart size={120} data={[
+              { label: 'New',       value: periodRequests.filter(r => r.status === 'New request').length,      color: '#3b82f6' },
+              { label: 'Active',    value: periodRequests.filter(r => ['Scheduled','Site Work On-going'].includes(r.status)).length, color: '#f59e0b' },
+              { label: 'Reporting', value: periodRequests.filter(r => ['Site work completed','Draft Report Submitted','Draft Report Accepted'].includes(r.status)).length, color: '#6366f1' },
+              { label: 'Done',      value: periodRequests.filter(r => r.status === 'Report accepted').length,  color: '#10b981' },
+              { label: 'Cancelled', value: periodRequests.filter(r => r.status === 'Cancelled').length,        color: '#ef4444' },
+            ]} />
+            <div className="flex flex-col gap-1.5 text-xs">
+              {[
+                { label: 'New',       color: '#3b82f6', value: periodRequests.filter(r => r.status === 'New request').length },
+                { label: 'Active',    color: '#f59e0b', value: periodRequests.filter(r => ['Scheduled','Site Work On-going'].includes(r.status)).length },
+                { label: 'Reporting', color: '#6366f1', value: periodRequests.filter(r => ['Site work completed','Draft Report Submitted','Draft Report Accepted'].includes(r.status)).length },
+                { label: 'Done',      color: '#10b981', value: periodRequests.filter(r => r.status === 'Report accepted').length },
+                { label: 'Cancelled', color: '#ef4444', value: periodRequests.filter(r => r.status === 'Cancelled').length },
+              ].map(l => (
+                <div key={l.label} className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{background: l.color}} />
+                  <span className="text-gray-600">{l.label}</span>
+                  <span className="font-semibold ml-auto pl-3">{l.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="card">
+          <div className="section-title mb-3">By Category</div>
+          <div className="flex items-center gap-4">
+            <DonutChart size={120} data={[
+              { label: 'Meridium',    value: periodRequests.filter(r => r.job_category === 'Meridium').length,    color: '#185FA5' },
+              { label: 'Turn Around', value: periodRequests.filter(r => r.job_category === 'Turn Around').length, color: '#1D9E75' },
+              { label: 'Ad-Hoc',      value: periodRequests.filter(r => r.job_category === 'Ad-Hoc').length,      color: '#f59e0b' },
+            ]} />
+            <div className="flex flex-col gap-1.5 text-xs">
+              {[
+                { label: 'Meridium',    color: '#185FA5', value: periodRequests.filter(r => r.job_category === 'Meridium').length },
+                { label: 'Turn Around', color: '#1D9E75', value: periodRequests.filter(r => r.job_category === 'Turn Around').length },
+                { label: 'Ad-Hoc',      color: '#f59e0b', value: periodRequests.filter(r => r.job_category === 'Ad-Hoc').length },
+              ].map(l => (
+                <div key={l.label} className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{background: l.color}} />
+                  <span className="text-gray-600">{l.label}</span>
+                  <span className="font-semibold ml-auto pl-3">{l.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Action required */}
