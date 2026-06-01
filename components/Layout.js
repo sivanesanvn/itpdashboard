@@ -60,8 +60,9 @@ export default function Layout({ profile, nav = [], children }) {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <header className="bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
         <div className="flex items-center gap-3 px-4 py-2">
-          {/* Logo in white container — no black background */}
           <img src="/cutech_logo.png" alt="Cutech" style={{height:'32px',width:'auto',display:'block'}} />
+          <div className="w-px h-6 bg-gray-200" />
+          <img src="/ticwerks_logo.svg" alt="TicWerks" style={{height:'32px',width:'auto',display:'block'}} />
 
           <div className="ml-auto flex items-center gap-2">
             {profile && (
