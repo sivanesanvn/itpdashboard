@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react'
 import Layout from '../../components/Layout'
-import { StatusBadge, ScaffoldBadge, ProgressTracker } from '../../components/StatusBadge'
+import { StatusBadge } from '../../components/StatusBadge'
 
 export default function TechJobs() {
   const supabase = useSupabaseClient()
@@ -91,7 +91,7 @@ export default function TechJobs() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-mono text-gray-400">{j.request_no}</span>
                       <StatusBadge status={j.status} />
-                      {j.scaffold_required && <ScaffoldBadge status={j.scaffold_status ?? 'Pending'} />}
+                      {j.scaffold_required && <StatusBadge status={j.scaffold_status ?? 'Pending'} />}
                     </div>
                     <div className="font-medium text-sm mt-1">{j.company}</div>
                     <div className="text-xs text-gray-500">{j.ndt_method} · {j.location}</div>
@@ -108,7 +108,6 @@ export default function TechJobs() {
                   </div>
                 )}
 
-                <ProgressTracker status={j.status} scaffoldStatus={j.scaffold_status} scaffoldRequired={j.scaffold_required} />
 
                 {/* Action buttons */}
                 <div className="flex gap-2 mt-3 flex-wrap">

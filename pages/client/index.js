@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react'
 import Layout from '../../components/Layout'
-import { NDT_METHODS, PRIORITY_OPTIONS, SCAFFOLD_REASONS } from '../../lib/supabase'
+import { NDT_METHODS } from '../../lib/supabase'
+
+const PRIORITY_OPTIONS = ['Normal', 'Urgent', 'Shutdown / turnaround']
 
 export default function ClientNewRequest() {
   const supabase = useSupabaseClient()
