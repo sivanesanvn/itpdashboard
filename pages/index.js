@@ -72,9 +72,9 @@ export default function LoginPage() {
           <div className="text-center mt-6">
             <img src="/cutech_logo.png" alt="Cutech" style={{height:'20px',width:'auto',opacity:0.6}} />
             <p className="text-blue-300/60 text-xs mt-1">© {new Date().getFullYear()} Cutech · Complete Solution Provider</p>
-            <div className="flex items-center justify-center gap-1.5 mt-3">
-              <span className="text-blue-300/50 text-xs">Powered by</span>
-              <img src="/ticwerks_logo.svg" alt="TicWerks" style={{height:'16px',width:'auto',opacity:0.5,filter:'brightness(0) invert(1)'}} />
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <span className="text-white/70 text-xs font-medium">Powered by</span>
+              <img src="/ticwerks_logo.svg" alt="TicWerks" style={{height:'28px',width:'auto',filter:'brightness(0) invert(1)'}} />
             </div>
           </div>
         </div>
