@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase, NDT_STATUSES, JOB_CATEGORIES } from '../../lib/supabase'
 import Layout from '../../components/Layout'
+import DonutChart from '../../components/DonutChart'
 
 const ACTIVE_STATUSES = NDT_STATUSES.filter(s => !['Report accepted','Cancelled'].includes(s))
 
@@ -72,34 +73,54 @@ export default function ClientDashboard() {
       {/* Charts */}
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="bg-white border border-gray-100 rounded-xl p-4">
-          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">By status</div>
-          {NDT_STATUSES.filter(s => s !== 'Cancelled').map(s => {
-            const count = requests.filter(r => r.status === s).length
-            if (!count) return null
-            return (
-              <div key={s} className="mb-2">
-                <div className="flex justify-between text-xs mb-0.5">
-                  <span className="text-gray-600">{s}</span>
-                  <span className="font-medium">{count}</span>
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">By Status</div>
+          <div className="flex items-center gap-3">
+            <DonutChart size={110} data={[
+              { label: 'New',       value: requests.filter(r => r.status === 'New request').length,      color: '#3b82f6' },
+              { label: 'Active',    value: requests.filter(r => ['Scheduled','Site Work On-going'].includes(r.status)).length, color: '#f59e0b' },
+              { label: 'Reporting', value: requests.filter(r => ['Site work completed','Draft Report Submitted','Draft Report Accepted'].includes(r.status)).length, color: '#6366f1' },
+              { label: 'Done',      value: requests.filter(r => r.status === 'Report accepted').length,  color: '#10b981' },
+              { label: 'Cancelled', value: requests.filter(r => r.status === 'Cancelled').length,        color: '#ef4444' },
+            ]} />
+            <div className="flex flex-col gap-1 text-xs">
+              {[
+                { label: 'New',       color: '#3b82f6', value: requests.filter(r => r.status === 'New request').length },
+                { label: 'Active',    color: '#f59e0b', value: requests.filter(r => ['Scheduled','Site Work On-going'].includes(r.status)).length },
+                { label: 'Reporting', color: '#6366f1', value: requests.filter(r => ['Site work completed','Draft Report Submitted','Draft Report Accepted'].includes(r.status)).length },
+                { label: 'Done',      color: '#10b981', value: requests.filter(r => r.status === 'Report accepted').length },
+                { label: 'Cancelled', color: '#ef4444', value: requests.filter(r => r.status === 'Cancelled').length },
+              ].map(l => (
+                <div key={l.label} className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{background: l.color}} />
+                  <span className="text-gray-500">{l.label}</span>
+                  <span className="font-semibold ml-auto pl-2">{l.value}</span>
                 </div>
-                <div className="h-1.5 bg-gray-100 rounded-full">
-                  <div className="h-full bg-blue-500 rounded-full"
-                    style={{ width: `${Math.round((count / requests.length) * 100)}%` }} />
-                </div>
-              </div>
-            )
-          })}
+              ))}
+            </div>
+          </div>
         </div>
         <div className="bg-white border border-gray-100 rounded-xl p-4">
-          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">By category</div>
-          {JOB_CATEGORIES.map(c => (
-            <div key={c} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
-              <span className="text-xs text-gray-600">{c}</span>
-              <span className={`badge text-xs ${requests.filter(r=>r.job_category===c).length > 0 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-400'}`}>
-                {requests.filter(r=>r.job_category===c).length}
-              </span>
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">By Category</div>
+          <div className="flex items-center gap-3">
+            <DonutChart size={110} data={[
+              { label: 'Meridium',    value: requests.filter(r => r.job_category === 'Meridium').length,    color: '#185FA5' },
+              { label: 'Turn Around', value: requests.filter(r => r.job_category === 'Turn Around').length, color: '#1D9E75' },
+              { label: 'Ad-Hoc',      value: requests.filter(r => r.job_category === 'Ad-Hoc').length,      color: '#f59e0b' },
+            ]} />
+            <div className="flex flex-col gap-1 text-xs">
+              {[
+                { label: 'Meridium',    color: '#185FA5', value: requests.filter(r => r.job_category === 'Meridium').length },
+                { label: 'Turn Around', color: '#1D9E75', value: requests.filter(r => r.job_category === 'Turn Around').length },
+                { label: 'Ad-Hoc',      color: '#f59e0b', value: requests.filter(r => r.job_category === 'Ad-Hoc').length },
+              ].map(l => (
+                <div key={l.label} className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{background: l.color}} />
+                  <span className="text-gray-500">{l.label}</span>
+                  <span className="font-semibold ml-auto pl-2">{l.value}</span>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
 

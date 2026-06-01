@@ -63,7 +63,8 @@ export default function DocumentUpload({ requestId, profile, fileType = 'documen
     if (error) { alert('Download failed: ' + error.message); return }
     const a = document.createElement('a')
     a.href = data.signedUrl
-    a.download = doc.file_name
+    a.target = '_blank'
+    a.rel = 'noopener noreferrer'
     a.click()
   }
 

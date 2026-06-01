@@ -44,6 +44,11 @@ export default function LoginPage() {
 
           {/* Login card */}
           <div className="bg-white rounded-2xl shadow-2xl p-6 mb-4">
+            <div className="flex items-center justify-center gap-3 mb-5 pb-4 border-b border-gray-100">
+              <img src="/cutech_logo.png" alt="Cutech" style={{height:'32px',width:'auto'}} />
+              <div className="w-px h-6 bg-gray-200" />
+              <img src="/ticwerks_logo.svg" alt="TicWerks" style={{height:'32px',width:'auto'}} />
+            </div>
             <h2 className="text-base font-semibold mb-4 text-gray-800">Sign in to your account</h2>
             <form onSubmit={handleLogin} className="space-y-3">
               <div>
@@ -72,6 +77,10 @@ export default function LoginPage() {
           <div className="text-center mt-6">
             <img src="/cutech_logo.png" alt="Cutech" style={{height:'20px',width:'auto',opacity:0.6}} />
             <p className="text-blue-300/60 text-xs mt-1">© {new Date().getFullYear()} Cutech · Complete Solution Provider</p>
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <span className="text-white/70 text-xs font-medium">Powered by</span>
+              <img src="/ticwerks_logo.svg" alt="TicWerks" style={{height:'28px',width:'auto',filter:'brightness(0) invert(1)'}} />
+            </div>
           </div>
         </div>
       </div>
