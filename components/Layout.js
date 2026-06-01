@@ -120,7 +120,10 @@ export default function Layout({ profile, nav = [], children }) {
           <img src="/cutech_logo.png" alt="Cutech" style={{height:'20px',width:'auto'}} />
           <span className="text-xs text-gray-400">NDT Portal · Singapore</span>
         </div>
-        <span className="text-xs text-gray-300">© {new Date().getFullYear()} Cutech</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-gray-300">Powered by</span>
+          <img src="/ticwerks_logo.svg" alt="TicWerks" style={{height:'18px',width:'auto',opacity:0.6}} />
+        </div>
       </footer>
 
       {showPwd && <PasswordModal onClose={() => setShowPwd(false)} />}
