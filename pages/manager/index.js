@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react'
 import Layout from '../../components/Layout'
-import { StatusBadge, PriorityBadge, ScaffoldBadge } from '../../components/StatusBadge'
+import { StatusBadge } from '../../components/StatusBadge'
+import { PRIORITY_COLOR } from '../../lib/supabase'
 import Link from 'next/link'
 
 export default function ManagerDashboard() {
@@ -99,7 +100,9 @@ export default function ManagerDashboard() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs text-gray-400 font-mono">{r.request_no}</span>
                   <span className="text-sm font-medium">{r.company}</span>
-                  <PriorityBadge priority={r.priority} />
+                  {r.priority && r.priority !== 'Normal' && (
+                    <span className={`badge ${PRIORITY_COLOR[r.priority]}`}>{r.priority}</span>
+                  )}
                   {r.scaffold_required && <span className="text-xs text-orange-600">🏗 Scaffold needed</span>}
                 </div>
                 <div className="text-xs text-gray-500 mt-0.5">{r.ndt_method} · {r.location} · Needed by {r.date_needed}</div>
@@ -129,7 +132,7 @@ export default function ManagerDashboard() {
                   <span className="text-xs text-gray-400 font-mono">{r.request_no}</span>
                   <span className="text-sm font-medium">{r.company}</span>
                   <StatusBadge status={r.status} />
-                  {r.scaffold_status && <ScaffoldBadge status={r.scaffold_status} />}
+                  {r.scaffold_status && <StatusBadge status={r.scaffold_status} />}
                 </div>
                 <div className="text-xs text-gray-500 mt-0.5">
                   {r.ndt_method} · {r.tech_name ?? 'Unassigned'} · {r.scheduled_date}
