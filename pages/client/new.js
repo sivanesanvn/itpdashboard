@@ -18,11 +18,12 @@ export default function ClientNew() {
   const [draftId, setDraftId] = useState(null)
 
   const [s1, setS1] = useState({
-    location: '', equipment_no: '', contact_name: '', contact_phone: '', contact_email: '',
+    requester_name: '', requester_company: '', requester_email: '',
+    requester_position: '', requester_department: '',
+    location: '', equipment_no: '', contact_name: '', contact_phone: '',
     ndt_method: '', scope_qty: '', attachments: [], description: '',
     date_needed: '', priority: 'Normal',
     needs_scaffold: false, needs_insulation: false, needs_painting: false,
-    requester_position: '', requester_department: '',
   })
 
   const [s2, setS2] = useState({
@@ -38,10 +39,23 @@ export default function ClientNew() {
     const { data: p } = await supabase.from('profiles').select('*').eq('id', u.id).single()
     if (!p || !['client','manager'].includes(p.role)) { router.push('/'); return }
     setProfile(p); setUser(u)
+
+    // Fetch last request to prefill designation & department
+    const { data: lastReqs } = await supabase
+      .from('requests')
+      .select('requester_position, requester_department')
+      .eq('client_id', u.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+    const last = lastReqs?.[0]
+
     setS1(prev => ({
       ...prev,
-      requester_position:   p.position   || '',
-      requester_department: p.department || '',
+      requester_name:       p.full_name  || '',
+      requester_company:    p.company    || '',
+      requester_email:      u.email      || '',
+      requester_position:   last?.requester_position   || p.position   || '',
+      requester_department: last?.requester_department || p.department || '',
     }))
     if (router.query.step2) {
       const { data: r } = await supabase.from('requests').select('*').eq('id', router.query.step2).single()
@@ -78,14 +92,14 @@ export default function ClientNew() {
     }
     const { data, error } = await supabase.from('requests').insert({
       client_id:         user.id,
-      company:           profile.company || profile.full_name,
+      company:           s1.requester_company || profile.company || profile.full_name,
       location:          s1.location,
       equipment_no:      s1.equipment_no,
       contact_name:      s1.contact_name,
       contact_phone:     s1.contact_phone,
-      contact_email:     s1.contact_email,
+      contact_email:     s1.requester_email,
       requested_by_id:   user.id,
-      requested_by_name: profile.full_name,
+      requested_by_name: s1.requester_name || profile.full_name,
       ndt_method:        s1.ndt_method,
       scope_qty:         s1.scope_qty,
       description:       s1.description,
@@ -151,19 +165,31 @@ export default function ClientNew() {
             {/* Requested by */}
             <div className="card mb-4">
               <div className="section-title">👤 Requested by</div>
-              <div className="flex items-center gap-3 p-2.5 bg-blue-50 rounded-lg border border-blue-100 mb-3">
-                <div className="w-8 h-8 rounded-full bg-blue-700 text-white flex items-center justify-center text-xs font-bold shrink-0">
-                  {profile.full_name?.slice(0,1)}
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="label">Name *</label>
+                  <input className="input" placeholder="Your full name"
+                    value={s1.requester_name}
+                    onChange={e => setS1(p => ({...p, requester_name: e.target.value}))} />
                 </div>
                 <div>
-                  <div className="text-sm font-medium">{profile.full_name}</div>
-                  <div className="text-xs text-gray-400">{profile.company || profile.email}</div>
+                  <label className="label">Company *</label>
+                  <input className="input" placeholder="Your company name"
+                    value={s1.requester_company}
+                    onChange={e => setS1(p => ({...p, requester_company: e.target.value}))} />
                 </div>
-                <span className="ml-auto text-xs text-blue-600 font-medium">Auto-filled</span>
+              </div>
+              <div className="mb-3">
+                <label className="label">Email</label>
+                <div className="flex items-center gap-2">
+                  <input className="input bg-gray-50 text-gray-500 cursor-not-allowed flex-1"
+                    value={s1.requester_email} readOnly />
+                  <span className="text-xs text-blue-600 font-medium whitespace-nowrap">From login</span>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="label">Your position / designation</label>
+                  <label className="label">Designation / position</label>
                   <input className="input" placeholder="e.g. Inspection Engineer"
                     value={s1.requester_position}
                     onChange={e => setS1(p => ({...p, requester_position: e.target.value}))} />
@@ -373,7 +399,7 @@ export default function ClientNew() {
               <button className="btn btn-primary" onClick={() => router.push('/client/requests')}>View my requests →</button>
               <button className="btn btn-ghost" onClick={() => {
                 setStep(1)
-                setS1({ location:'',equipment_no:'',contact_name:'',contact_phone:'',contact_email:'',ndt_method:'',scope_qty:'',attachments:[],description:'',date_needed:'',priority:'Normal',needs_scaffold:false,needs_insulation:false,needs_painting:false })
+                setS1(prev => ({ ...prev, location:'',equipment_no:'',contact_name:'',contact_phone:'',ndt_method:'',scope_qty:'',attachments:[],description:'',date_needed:'',priority:'Normal',needs_scaffold:false,needs_insulation:false,needs_painting:false }))
                 setS2({ material:'',thickness_mm:'',pipe_size:'',p_number:'',code_standard:'',acceptance:'',special_notes:'' })
               }}>Submit another</button>
             </div>
