@@ -165,7 +165,7 @@ export default function ClientNew() {
             {/* Requested by */}
             <div className="card mb-4">
               <div className="section-title">👤 Requested by</div>
-              <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="grid grid-cols-3 gap-3 mb-3">
                 <div>
                   <label className="label">Name *</label>
                   <input className="input" placeholder="Your full name"
@@ -178,13 +178,12 @@ export default function ClientNew() {
                     value={s1.requester_company}
                     onChange={e => setS1(p => ({...p, requester_company: e.target.value}))} />
                 </div>
-              </div>
-              <div className="mb-3">
-                <label className="label">Email</label>
-                <div className="flex items-center gap-2">
-                  <input className="input bg-gray-50 text-gray-500 cursor-not-allowed flex-1"
+                <div>
+                  <label className="label flex items-center justify-between">
+                    Email <span className="text-blue-600 font-medium normal-case tracking-normal">From login</span>
+                  </label>
+                  <input className="input bg-gray-50 text-gray-500 cursor-not-allowed"
                     value={s1.requester_email} readOnly />
-                  <span className="text-xs text-blue-600 font-medium whitespace-nowrap">From login</span>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
