@@ -299,7 +299,7 @@ export default function ManagerRequests() {
 
       {printing && selected && (
         <PrintRequest request={{ ...selected, support_jobs: selected.support_jobs || [] }}
-          onClose={() => setPrinting(false)} />
+          docs={docs} onClose={() => setPrinting(false)} />
       )}
     </Layout>
   )
