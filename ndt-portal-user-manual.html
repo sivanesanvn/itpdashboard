@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NDT Portal — User Manual</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 13px;
+      color: #1a1a2e;
+      background: #f4f6f9;
+    }
+
+    .page {
+      max-width: 800px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #185FA5 0%, #0C447C 100%);
+      color: #fff;
+      padding: 36px 40px 28px;
+    }
+    .header .logo-line {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      opacity: 0.75;
+      margin-bottom: 8px;
+    }
+    .header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .header .subtitle {
+      margin-top: 6px;
+      font-size: 13px;
+      opacity: 0.85;
+    }
+    .header .meta {
+      margin-top: 18px;
+      display: flex;
+      gap: 32px;
+      font-size: 11px;
+      opacity: 0.70;
+    }
+
+    /* Body */
+    .body {
+      padding: 36px 40px 48px;
+    }
+
+    /* Section */
+    .section {
+      margin-bottom: 32px;
+    }
+    .section-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: #185FA5;
+      border-bottom: 2px solid #185FA5;
+      padding-bottom: 5px;
+      margin-bottom: 14px;
+    }
+
+    p {
+      line-height: 1.7;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    /* Role table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+      font-size: 12.5px;
+    }
+    thead tr {
+      background: #185FA5;
+      color: #fff;
+    }
+    thead th {
+      padding: 9px 14px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+    tbody tr:nth-child(even) { background: #f0f5fb; }
+    tbody tr:nth-child(odd)  { background: #fff; }
+    tbody td {
+      padding: 9px 14px;
+      border-bottom: 1px solid #e5eaf1;
+      vertical-align: top;
+      line-height: 1.5;
+    }
+    tbody td:first-child {
+      font-weight: 600;
+      color: #0C447C;
+      white-space: nowrap;
+    }
+
+    /* Steps */
+    .role-block {
+      margin-bottom: 22px;
+    }
+    .role-block h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0C447C;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .role-block h3 .tag {
+      background: #185FA5;
+      color: #fff;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    ol, ul {
+      padding-left: 20px;
+      color: #333;
+      line-height: 1.9;
+    }
+    li { margin-bottom: 2px; }
+
+    /* Lifecycle */
+    .lifecycle {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0;
+      margin-top: 10px;
+      align-items: center;
+    }
+    .lifecycle-step {
+      background: #f0f5fb;
+      border: 1.5px solid #b8d0ea;
+      border-radius: 6px;
+      padding: 7px 13px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #0C447C;
+      text-align: center;
+      margin: 4px 0;
+    }
+    .lifecycle-arrow {
+      color: #185FA5;
+      font-size: 16px;
+      margin: 0 4px;
+      font-weight: 700;
+    }
+    .lifecycle-cancelled {
+      background: #fef2f2;
+      border-color: #fca5a5;
+      color: #b91c1c;
+    }
+    .lifecycle-note {
+      font-size: 11px;
+      color: #666;
+      margin-top: 10px;
+      font-style: italic;
+    }
+
+    /* Rules */
+    .rules-list {
+      list-style: none;
+      padding: 0;
+    }
+    .rules-list li {
+      padding: 7px 0 7px 24px;
+      border-bottom: 1px solid #f0f0f0;
+      position: relative;
+      color: #333;
+      line-height: 1.6;
+    }
+    .rules-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #185FA5;
+      font-weight: 700;
+    }
+
+    /* Footer */
+    .footer {
+      background: #f0f5fb;
+      border-top: 1.5px solid #d0dff0;
+      padding: 18px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: #888;
+    }
+    .footer strong { color: #185FA5; }
+
+    @media print {
+      body { background: #fff; }
+      .page { box-shadow: none; margin: 0; border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-line">Cutech Singapore</div>
+    <h1>NDT Portal</h1>
+    <div class="subtitle">Non-Destructive Testing Inspection Management System</div>
+    <div class="meta">
+      <span>Document: User Manual</span>
+      <span>Version: 1.0</span>
+      <span>Date: June 2026</span>
+      <span>Classification: Internal</span>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- OVERVIEW -->
+    <div class="section">
+      <div class="section-title">Overview</div>
+      <p>
+        The NDT Portal is a web-based inspection management system for Cutech Singapore. It connects
+        industrial clients, NDT technicians, coordinators, managers, and support contractors
+        (scaffold, insulation, painting) on a single platform — from job request to final report delivery.
+      </p>
+      <p>
+        All users access the system through the same login page. The system automatically routes each
+        user to their role-specific dashboard upon login.
+      </p>
+    </div>
+
+    <!-- ROLES -->
+    <div class="section">
+      <div class="section-title">User Roles</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Role</th>
+            <th>Responsibility</th>
+            <th>Access</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Manager</td>
+            <td>Full system control — scheduling, team management, reporting</td>
+            <td>All requests, all users, all data</td>
+          </tr>
+          <tr>
+            <td>Coordinator</td>
+            <td>Monitor operations and job progress</td>
+            <td>Operations overview dashboard</td>
+          </tr>
+          <tr>
+            <td>Client</td>
+            <td>Submit inspection requests and track status</td>
+            <td>Own requests only</td>
+          </tr>
+          <tr>
+            <td>Technician</td>
+            <td>Execute NDT jobs, update status, upload reports</td>
+            <td>Assigned jobs only</td>
+          </tr>
+          <tr>
+            <td>Scaffold</td>
+            <td>Erect and dismantle scaffolding for inspection sites</td>
+            <td>Own support jobs only</td>
+          </tr>
+          <tr>
+            <td>Insulation</td>
+            <td>Remove and restore insulation at inspection points</td>
+            <td>Own support jobs only</td>
+          </tr>
+          <tr>
+            <td>Painting</td>
+            <td>Surface preparation and post-inspection painting</td>
+            <td>Own support jobs only</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- HOW TO USE BY ROLE -->
+    <div class="section">
+      <div class="section-title">How to Use — By Role</div>
+
+      <div class="role-block">
+        <h3><span class="tag">Client</span></h3>
+        <ol>
+          <li>Log in → you are taken to <strong>My Requests</strong>.</li>
+          <li>Click <strong>New Request</strong> to submit an inspection job.</li>
+          <li>Complete <strong>Step 1</strong>: location, NDT method, priority, and plant details.</li>
+          <li>Complete <strong>Step 2</strong>: additional job specifications and notes.</li>
+          <li>Submit — your request appears in the list with status <strong>New</strong>.</li>
+          <li>Monitor status updates from the same page as work progresses.</li>
+        </ol>
+      </div>
+
+      <div class="role-block">
+        <h3><span class="tag">Manager</span></h3>
+        <ol>
+          <li>Log in → you are taken to the <strong>Manager Dashboard</strong>.</li>
+          <li>Go to <strong>Requests</strong> to view all incoming requests.</li>
+          <li>Click <strong>Schedule</strong> on a <em>New</em> request → set date, assign technician, and add support jobs if required.</li>
+          <li>Go to <strong>Technicians</strong> to check availability before scheduling.</li>
+          <li>Go to <strong>Team</strong> to add new users, update roles, or manage profiles.</li>
+          <li>Monitor job progress and report submissions from the dashboard.</li>
+        </ol>
+      </div>
+
+      <div class="role-block">
+        <h3><span class="tag">Coordinator</span></h3>
+        <ol>
+          <li>Log in → you are taken to the <strong>Coordinator Dashboard</strong>.</li>
+          <li>View live status of all ongoing and pending jobs.</li>
+          <li>Use this view to coordinate fieldwork and support activities.</li>
+        </ol>
+      </div>
+
+      <div class="role-block">
+        <h3><span class="tag">Technician</span></h3>
+        <ol>
+          <li>Log in → you are taken to <strong>My Jobs</strong>.</li>
+          <li>View all jobs assigned to you with scheduled dates and locations.</li>
+          <li>Update job status as work progresses on site.</li>
+          <li>Upload the draft report once site work is complete.</li>
+        </ol>
+      </div>
+
+      <div class="role-block">
+        <h3><span class="tag">Scaffold / Insulation / Painting</span></h3>
+        <ol>
+          <li>Log in → you are taken to <strong>My Jobs</strong>.</li>
+          <li>View only the support jobs assigned to your team.</li>
+          <li>Update your support job status as work progresses.</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- LIFECYCLE -->
+    <div class="section">
+      <div class="section-title">Request Lifecycle</div>
+      <div class="lifecycle">
+        <div class="lifecycle-step">New</div>
+        <div class="lifecycle-arrow">→</div>
+        <div class="lifecycle-step">Scheduled</div>
+        <div class="lifecycle-arrow">→</div>
+        <div class="lifecycle-step">Site Work On-going</div>
+        <div class="lifecycle-arrow">→</div>
+        <div class="lifecycle-step">Site Work Completed</div>
+        <div class="lifecycle-arrow">→</div>
+        <div class="lifecycle-step">Draft Report Submitted</div>
+        <div class="lifecycle-arrow">→</div>
+        <div class="lifecycle-step">Draft Report Accepted</div>
+        <div class="lifecycle-arrow">→</div>
+        <div class="lifecycle-step">Report Accepted</div>
+      </div>
+      <div style="margin-top:10px; display:flex; align-items:center; gap:8px;">
+        <div class="lifecycle-step lifecycle-cancelled">Cancelled</div>
+        <span style="font-size:11px; color:#666; font-style:italic;">— can be applied at any stage by the Manager</span>
+      </div>
+      <p class="lifecycle-note">All status changes are automatically recorded in the audit trail. No manual logging is required.</p>
+    </div>
+
+    <!-- SUPPORT JOB STATUSES -->
+    <div class="section">
+      <div class="section-title">Support Job Statuses</div>
+      <table>
+        <thead>
+          <tr><th>Type</th><th>Status Progression</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Scaffold</td>
+            <td>Pending → Erection → Ready to Use → Dismantling → Completed</td>
+          </tr>
+          <tr>
+            <td>Insulation</td>
+            <td>Pending → In Progress → Ready to Use → Completed</td>
+          </tr>
+          <tr>
+            <td>Painting</td>
+            <td>Pending → In Progress → Completed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- KEY RULES -->
+    <div class="section">
+      <div class="section-title">Key Rules &amp; Access Controls</div>
+      <ul class="rules-list">
+        <li>Clients can only view and manage their own requests — other clients' data is never visible.</li>
+        <li>Technicians only see jobs that have been assigned to them by a Manager.</li>
+        <li>Contractors (scaffold, insulation, painting) only see requests where they have an active support job.</li>
+        <li>Only the Manager can schedule jobs, assign technicians, and manage user accounts.</li>
+        <li>All status changes are permanently recorded in the system audit trail.</li>
+        <li>Document uploads (reports, supporting files) are securely stored and linked to the request.</li>
+      </ul>
+    </div>
+
+    <!-- SUPPORT -->
+    <div class="section">
+      <div class="section-title">Getting Help</div>
+      <p>
+        For account creation, password resets, role changes, or access issues — contact your
+        <strong>System Administrator (Manager)</strong>.
+      </p>
+      <table>
+        <thead>
+          <tr><th>Issue</th><th>Who to Contact</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Cannot log in / forgot password</td><td>Manager / System Administrator</td></tr>
+          <tr><td>Wrong role or missing access</td><td>Manager / System Administrator</td></tr>
+          <tr><td>Request not appearing</td><td>Manager / System Administrator</td></tr>
+          <tr><td>Technical / system errors</td><td>System Developer</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span><strong>NDT Portal</strong> — Cutech Singapore</span>
+    <span>User Manual v1.0 &nbsp;|&nbsp; June 2026</span>
+    <span>Internal Use Only</span>
+  </div>
+
+</div>
+</body>
+</html>
