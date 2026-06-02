@@ -119,13 +119,13 @@ export default function ManagerRequests() {
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/80">
               <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">ID</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Requested By</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Method</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Category</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Location</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Equipment</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Requested On</th>
               <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Status</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Method</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Equipment</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Location</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Category</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Requested By</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Requested On</th>
               <th className="px-3 py-2.5"></th>
             </tr>
           </thead>
@@ -134,17 +134,17 @@ export default function ManagerRequests() {
               <tr key={r.id} onClick={() => openRequest(r)}
                 className="hover:bg-blue-50/30 cursor-pointer transition-colors">
                 <td className="px-3 py-2.5 whitespace-nowrap font-semibold text-blue-700">{r.request_no}</td>
-                <td className="px-3 py-2.5 whitespace-nowrap text-gray-700">{r.requested_by_name || '—'}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap"><StatusBadge status={r.status} /></td>
                 <td className="px-3 py-2.5 whitespace-nowrap text-gray-600 max-w-[180px]">
                   <span className="block truncate">{r.ndt_method}</span>
                 </td>
-                <td className="px-3 py-2.5 whitespace-nowrap font-medium text-gray-700">{r.job_category || '—'}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap text-gray-500">{r.equipment_no || '—'}</td>
                 <td className="px-3 py-2.5 whitespace-nowrap text-gray-500 max-w-[200px]">
                   <span className="block truncate">{r.location || '—'}</span>
                 </td>
-                <td className="px-3 py-2.5 whitespace-nowrap text-gray-500">{r.equipment_no || '—'}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap font-medium text-gray-700">{r.job_category || '—'}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap text-gray-700">{r.requested_by_name || '—'}</td>
                 <td className="px-3 py-2.5 whitespace-nowrap text-gray-400">{r.created_at?.slice(0,10)}</td>
-                <td className="px-3 py-2.5 whitespace-nowrap"><StatusBadge status={r.status} /></td>
                 <td className="px-3 py-2.5 whitespace-nowrap text-gray-400">
                   {r.request_documents?.length > 0 && <span title="Has attachments">📎</span>}
                 </td>
