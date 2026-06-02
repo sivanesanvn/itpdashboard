@@ -1,10 +1,10 @@
 import { NDT_STATUSES } from '../lib/supabase'
 
-export default function PrintRequest({ request: r, onClose }) {
+export default function PrintRequest({ request: r, docs = [], onClose }) {
   const si = NDT_STATUSES.indexOf(r.status)
 
   function openPrintTab() {
-    const html = generatePrintHTML(r, si)
+    const html = generatePrintHTML(r, si, docs)
     const win = window.open('', '_blank')
     if (!win) { alert('Please allow popups for this site to print.'); return }
     win.document.write(html)
@@ -12,6 +12,12 @@ export default function PrintRequest({ request: r, onClose }) {
     win.focus()
     setTimeout(() => { win.print() }, 500)
   }
+
+  const supportFlags = [
+    r.needs_scaffold   && '🏗️ Scaffold',
+    r.needs_insulation && '🧱 Insulation removal',
+    r.needs_painting   && '🎨 Painting',
+  ].filter(Boolean)
 
   return (
     <>
@@ -34,6 +40,7 @@ export default function PrintRequest({ request: r, onClose }) {
           {/* Preview inside modal */}
           <div className="p-6 bg-gray-50">
             <div className="bg-white rounded-xl border border-gray-200 p-8 text-sm shadow-sm">
+
               {/* Header */}
               <div className="flex items-start justify-between mb-5 pb-4 border-b-2 border-gray-800">
                 <div>
@@ -52,44 +59,108 @@ export default function PrintRequest({ request: r, onClose }) {
                 <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">{r.status}</span>
               </div>
 
-              {/* Client & Site */}
+              {/* Requester */}
+              <div className="mb-4">
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Requested by</div>
+                <table className="w-full text-xs">
+                  <tbody>
+                    {[
+                      ['Name',        r.requested_by_name],
+                      ['Company',     r.company],
+                      ['Email',       r.contact_email],
+                      ['Designation', r.requester_position],
+                      ['Department',  r.requester_department],
+                    ].map(([k, v]) => v && (
+                      <tr key={k}><td className="text-gray-400 pr-2 py-0.5 w-28">{k}</td><td className="font-medium">{v}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Site & Scheduling */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Client</div>
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Site information</div>
                   <table className="w-full text-xs">
-                    {[['Company',r.company],['Contact',r.contact_name],['Phone',r.contact_phone],['Location',r.location],['Equipment',r.equipment_no]].map(([k,v])=>v&&(
-                      <tr key={k}><td className="text-gray-400 pr-2 py-0.5 w-24">{k}</td><td className="font-medium">{v}</td></tr>
-                    ))}
+                    <tbody>
+                      {[
+                        ['Location',     r.location],
+                        ['Equipment',    r.equipment_no],
+                        ['Job category', r.job_category],
+                        ['Contact',      r.contact_name],
+                        ['Phone',        r.contact_phone],
+                      ].map(([k, v]) => v && (
+                        <tr key={k}><td className="text-gray-400 pr-2 py-0.5 w-24">{k}</td><td className="font-medium">{v}</td></tr>
+                      ))}
+                    </tbody>
                   </table>
                 </div>
                 <div>
                   <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Scheduling</div>
                   <table className="w-full text-xs">
-                    {[['Requested by',r.requested_by_name],['Date needed',r.date_needed],['Priority',r.priority],['Scheduled',r.scheduled_date],['Technician',r.tech_name]].map(([k,v])=>v&&(
-                      <tr key={k}><td className="text-gray-400 pr-2 py-0.5 w-24">{k}</td><td className="font-medium">{v}</td></tr>
-                    ))}
+                    <tbody>
+                      {[
+                        ['Date needed',    r.date_needed],
+                        ['Priority',       r.priority],
+                        ['Scheduled date', r.scheduled_date],
+                        ['Technician',     r.tech_name],
+                      ].map(([k, v]) => v && (
+                        <tr key={k}><td className="text-gray-400 pr-2 py-0.5 w-28">{k}</td><td className="font-medium">{v}</td></tr>
+                      ))}
+                    </tbody>
                   </table>
                 </div>
               </div>
 
-              {/* Scope */}
+              {/* NDT Scope */}
               <div className="mb-4">
                 <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">NDT Scope</div>
                 <table className="w-full text-xs">
-                  {[['Method',r.ndt_method],['Scope',r.scope_qty],['Description',r.description]].map(([k,v])=>v&&(
-                    <tr key={k}><td className="text-gray-400 pr-2 py-0.5 w-24">{k}</td><td className="font-medium">{v}</td></tr>
-                  ))}
+                  <tbody>
+                    {[
+                      ['Method',      r.ndt_method],
+                      ['Scope / Qty', r.scope_qty],
+                      ['Description', r.description],
+                    ].map(([k, v]) => v && (
+                      <tr key={k}><td className="text-gray-400 pr-2 py-0.5 w-24">{k}</td><td className="font-medium">{v}</td></tr>
+                    ))}
+                    {r.high_temp && (
+                      <tr><td className="text-gray-400 pr-2 py-0.5 w-24">High temp</td><td className="font-medium text-red-600">🌡️ Yes — above 50°C</td></tr>
+                    )}
+                  </tbody>
                 </table>
               </div>
 
-              {/* Technical */}
+              {/* Support work requested */}
+              {supportFlags.length > 0 && (
+                <div className="mb-4">
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Support work requested</div>
+                  <div className="flex gap-2 flex-wrap">
+                    {supportFlags.map(f => (
+                      <span key={f} className="text-xs bg-orange-50 text-orange-700 border border-orange-100 px-2 py-0.5 rounded">{f}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Technical details */}
               {r.step2_complete && (
                 <div className="mb-4">
                   <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Technical details</div>
                   <table className="w-full text-xs">
-                    {[['Material',r.material],['Thickness',r.thickness_mm?r.thickness_mm+' mm':null],['Code',r.code_standard],['Acceptance',r.acceptance]].map(([k,v])=>v&&(
-                      <tr key={k}><td className="text-gray-400 pr-2 py-0.5 w-24">{k}</td><td className="font-medium">{v}</td></tr>
-                    ))}
+                    <tbody>
+                      {[
+                        ['Material',      r.material],
+                        ['Thickness',     r.thickness_mm ? r.thickness_mm + ' mm' : null],
+                        ['Pipe size',     r.pipe_size],
+                        ['P-Number',      r.p_number],
+                        ['Code/Standard', r.code_standard],
+                        ['Acceptance',    r.acceptance],
+                        ['Special notes', r.special_notes],
+                      ].map(([k, v]) => v && (
+                        <tr key={k}><td className="text-gray-400 pr-2 py-0.5 w-28">{k}</td><td className="font-medium">{v}</td></tr>
+                      ))}
+                    </tbody>
                   </table>
                 </div>
               )}
@@ -97,17 +168,59 @@ export default function PrintRequest({ request: r, onClose }) {
               {/* Support jobs */}
               {r.support_jobs?.length > 0 && (
                 <div className="mb-4">
-                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Support work</div>
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Support work status</div>
                   <table className="w-full text-xs border border-gray-200 rounded">
-                    <thead className="bg-gray-50"><tr><th className="text-left px-2 py-1">Type</th><th className="text-left px-2 py-1">Contractor</th><th className="text-left px-2 py-1">Status</th></tr></thead>
-                    <tbody>{r.support_jobs.map(sj=>(
-                      <tr key={sj.id} className="border-t border-gray-100">
-                        <td className="px-2 py-1 font-medium">{sj.job_type}</td>
-                        <td className="px-2 py-1 text-gray-500">{sj.contractor_name||'—'}</td>
-                        <td className="px-2 py-1">{sj.status}</td>
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left px-2 py-1">Type</th>
+                        <th className="text-left px-2 py-1">Contractor</th>
+                        <th className="text-left px-2 py-1">Status</th>
                       </tr>
-                    ))}</tbody>
+                    </thead>
+                    <tbody>
+                      {r.support_jobs.map(sj => (
+                        <tr key={sj.id} className="border-t border-gray-100">
+                          <td className="px-2 py-1 font-medium">{sj.job_type}</td>
+                          <td className="px-2 py-1 text-gray-500">{sj.contractor_name || '—'}</td>
+                          <td className="px-2 py-1">{sj.status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
                   </table>
+                </div>
+              )}
+
+              {/* Attachments */}
+              {docs.length > 0 && (
+                <div className="mb-4">
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Attachments</div>
+                  <table className="w-full text-xs border border-gray-200 rounded">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left px-2 py-1">File name</th>
+                        <th className="text-left px-2 py-1">Type</th>
+                        <th className="text-left px-2 py-1">Uploaded by</th>
+                        <th className="text-left px-2 py-1">Size</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {docs.map(d => (
+                        <tr key={d.id} className="border-t border-gray-100">
+                          <td className="px-2 py-1 font-medium">{d.file_name}</td>
+                          <td className="px-2 py-1 text-gray-500 capitalize">{d.file_type}</td>
+                          <td className="px-2 py-1 text-gray-500">{d.uploader_name}</td>
+                          <td className="px-2 py-1 text-gray-400">{d.file_size ? (d.file_size / 1024).toFixed(0) + ' KB' : '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {r.manager_notes && (
+                <div className="mb-4">
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Manager notes</div>
+                  <div className="bg-gray-50 rounded p-2 text-xs text-gray-600">{r.manager_notes}</div>
                 </div>
               )}
 
@@ -123,38 +236,71 @@ export default function PrintRequest({ request: r, onClose }) {
   )
 }
 
-function generatePrintHTML(r, si) {
+function generatePrintHTML(r, si, docs) {
   const statuses = ['New request','Scheduled','On-going','Site work completed','Report submitted','Report accepted']
-  const timelineHTML = statuses.map((s,i) => {
+  const timelineHTML = statuses.map((s, i) => {
     const done = i < si, active = i === si
-    const bg = done ? '#1D9E75' : active ? '#185FA5' : '#e5e7eb'
+    const bg    = done ? '#1D9E75' : active ? '#185FA5' : '#e5e7eb'
     const color = (done || active) ? '#fff' : '#9ca3af'
-    const label = done ? '✓' : String(i+1)
+    const label = done ? '✓' : String(i + 1)
     return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative">
-      ${i < statuses.length-1 ? `<div style="position:absolute;top:10px;left:50%;width:100%;height:2px;background:${done?'#1D9E75':'#e5e7eb'}"></div>` : ''}
+      ${i < statuses.length - 1 ? `<div style="position:absolute;top:10px;left:50%;width:100%;height:2px;background:${done ? '#1D9E75' : '#e5e7eb'}"></div>` : ''}
       <div style="width:20px;height:20px;border-radius:50%;background:${bg};color:${color};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;position:relative;z-index:1">${label}</div>
-      <div style="font-size:8px;color:${done||active?'#374151':'#9ca3af'};margin-top:4px;text-align:center;max-width:50px;line-height:1.2">${s}</div>
+      <div style="font-size:8px;color:${done || active ? '#374151' : '#9ca3af'};margin-top:4px;text-align:center;max-width:50px;line-height:1.2">${s}</div>
     </div>`
   }).join('')
 
+  const row = (k, v) => v ? `<tr><td style="color:#6b7280;padding:3px 8px 3px 0;width:130px;white-space:nowrap;vertical-align:top">${k}</td><td style="font-weight:500;padding:3px 0">${v}</td></tr>` : ''
+
+  const supportFlags = [
+    r.needs_scaffold   && '🏗️ Scaffold',
+    r.needs_insulation && '🧱 Insulation removal',
+    r.needs_painting   && '🎨 Painting',
+  ].filter(Boolean)
+
+  const supportFlagsHTML = supportFlags.length ? `
+    <div style="margin-bottom:16px">
+      <div class="section-title">Support work requested</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${supportFlags.map(f => `<span style="font-size:11px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;padding:2px 8px;border-radius:4px">${f}</span>`).join('')}
+      </div>
+    </div>` : ''
+
   const supportJobsHTML = r.support_jobs?.length ? `
     <div style="margin-bottom:16px">
-      <div style="font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Support work</div>
+      <div class="section-title">Support work status</div>
       <table style="width:100%;font-size:11px;border-collapse:collapse;border:1px solid #e5e7eb">
         <thead><tr style="background:#f9fafb">
           <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e5e7eb">Type</th>
           <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e5e7eb">Contractor</th>
           <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e5e7eb">Status</th>
         </tr></thead>
-        <tbody>${r.support_jobs.map(sj=>`<tr style="border-top:1px solid #f3f4f6">
+        <tbody>${r.support_jobs.map(sj => `<tr style="border-top:1px solid #f3f4f6">
           <td style="padding:5px 8px;font-weight:500">${sj.job_type}</td>
-          <td style="padding:5px 8px;color:#6b7280">${sj.contractor_name||'—'}</td>
+          <td style="padding:5px 8px;color:#6b7280">${sj.contractor_name || '—'}</td>
           <td style="padding:5px 8px">${sj.status}</td>
         </tr>`).join('')}</tbody>
       </table>
     </div>` : ''
 
-  const row = (k,v) => v ? `<tr><td style="color:#6b7280;padding:3px 8px 3px 0;width:120px;white-space:nowrap;vertical-align:top">${k}</td><td style="font-weight:500;padding:3px 0">${v}</td></tr>` : ''
+  const attachmentsHTML = docs.length ? `
+    <div style="margin-bottom:16px">
+      <div class="section-title">Attachments</div>
+      <table style="width:100%;font-size:11px;border-collapse:collapse;border:1px solid #e5e7eb">
+        <thead><tr style="background:#f9fafb">
+          <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e5e7eb">File name</th>
+          <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e5e7eb">Type</th>
+          <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e5e7eb">Uploaded by</th>
+          <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e5e7eb">Size</th>
+        </tr></thead>
+        <tbody>${docs.map(d => `<tr style="border-top:1px solid #f3f4f6">
+          <td style="padding:5px 8px;font-weight:500">${d.file_name}</td>
+          <td style="padding:5px 8px;color:#6b7280;text-transform:capitalize">${d.file_type}</td>
+          <td style="padding:5px 8px;color:#6b7280">${d.uploader_name || '—'}</td>
+          <td style="padding:5px 8px;color:#9ca3af">${d.file_size ? Math.round(d.file_size / 1024) + ' KB' : '—'}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>` : ''
 
   return `<!DOCTYPE html>
 <html>
@@ -177,13 +323,17 @@ function generatePrintHTML(r, si) {
 <body>
   <div class="header">
     <div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><img src="/cutech_logo.png" style="height:28px;width:auto" alt="Cutech"/><div style="height:28px;width:1px;background:#e5e7eb"></div><div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em">NDT Portal</div><div style="font-size:9px;color:#6b7280">Singapore · Complete Solution Provider</div></div></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <img src="/cutech_logo.png" style="height:28px;width:auto" alt="Cutech"/>
+        <div style="height:28px;width:1px;background:#e5e7eb"></div>
+        <div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em">NDT Portal</div><div style="font-size:9px;color:#6b7280">Singapore · Complete Solution Provider</div></div>
+      </div>
       <h1>NDT Inspection Request</h1>
       <div style="margin-top:8px"><span style="background:#dbeafe;color:#1e40af;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600">${r.status}</span></div>
     </div>
     <div style="text-align:right">
       <div class="req-no">${r.request_no}</div>
-      <div style="color:#6b7280;font-size:11px;margin-top:4px">${new Date().toLocaleDateString('en-SG', {day:'2-digit',month:'short',year:'numeric'})}</div>
+      <div style="color:#6b7280;font-size:11px;margin-top:4px">${new Date().toLocaleDateString('en-SG', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
     </div>
   </div>
 
@@ -192,25 +342,35 @@ function generatePrintHTML(r, si) {
     <div style="display:flex;align-items:flex-start">${timelineHTML}</div>
   </div>
 
+  <div style="margin-bottom:16px">
+    <div class="section-title">Requested by</div>
+    <table><tbody>
+      ${row('Name',        r.requested_by_name)}
+      ${row('Company',     r.company)}
+      ${row('Email',       r.contact_email)}
+      ${row('Designation', r.requester_position)}
+      ${row('Department',  r.requester_department)}
+    </tbody></table>
+  </div>
+
   <div class="grid2">
     <div>
-      <div class="section-title">Client & site</div>
+      <div class="section-title">Site information</div>
       <table><tbody>
-        ${row('Company', r.company)}
-        ${row('Requested by', r.requested_by_name)}
-        ${row('Contact', r.contact_name)}
-        ${row('Phone', r.contact_phone)}
-        ${row('Location', r.location)}
-        ${row('Equipment/Piping', r.equipment_no)}
-        ${row('Requested by', r.requested_by_name)}
+        ${row('Location',     r.location)}
+        ${row('Equipment',    r.equipment_no)}
+        ${row('Job category', r.job_category)}
+        ${row('Contact',      r.contact_name)}
+        ${row('Phone',        r.contact_phone)}
       </tbody></table>
     </div>
     <div>
       <div class="section-title">Scheduling</div>
       <table><tbody>
-        ${row('Date needed', r.date_needed)}
-        ${row('Priority', r.priority)}
+        ${row('Date needed',    r.date_needed)}
+        ${row('Priority',       r.priority)}
         ${row('Scheduled date', r.scheduled_date)}
+        ${row('Technician',     r.tech_name)}
       </tbody></table>
     </div>
   </div>
@@ -218,26 +378,31 @@ function generatePrintHTML(r, si) {
   <div style="margin-bottom:16px">
     <div class="section-title">NDT scope</div>
     <table><tbody>
-      ${row('Method', r.ndt_method)}
+      ${row('Method',      r.ndt_method)}
       ${row('Scope / Qty', r.scope_qty)}
       ${row('Description', r.description)}
+      ${r.high_temp ? row('High temperature', '🌡️ Yes — above 50°C') : ''}
     </tbody></table>
   </div>
+
+  ${supportFlagsHTML}
 
   ${r.step2_complete ? `<div style="margin-bottom:16px">
     <div class="section-title">Technical details</div>
     <table><tbody>
-      ${row('Material', r.material)}
-      ${row('Thickness', r.thickness_mm ? r.thickness_mm+' mm' : null)}
-      ${row('Pipe size', r.pipe_size)}
-      ${row('P-Number', r.p_number)}
-      ${row('Code / Standard', r.code_standard)}
-      ${row('Acceptance', r.acceptance)}
+      ${row('Material',      r.material)}
+      ${row('Thickness',     r.thickness_mm ? r.thickness_mm + ' mm' : null)}
+      ${row('Pipe size',     r.pipe_size)}
+      ${row('P-Number',      r.p_number)}
+      ${row('Code/Standard', r.code_standard)}
+      ${row('Acceptance',    r.acceptance)}
       ${row('Special notes', r.special_notes)}
     </tbody></table>
   </div>` : ''}
 
   ${supportJobsHTML}
+
+  ${attachmentsHTML}
 
   ${r.manager_notes ? `<div style="margin-bottom:16px">
     <div class="section-title">Manager notes</div>
