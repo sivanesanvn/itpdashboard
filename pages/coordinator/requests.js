@@ -83,15 +83,13 @@ export default function CoordinatorRequests() {
     const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     if (!p || p.role !== 'coordinator') { router.push('/'); return }
     setProfile(p)
-    await load(p)
+    await load()
   }
 
-  async function load(p) {
-    const prof = p || profile
+  async function load() {
     const { data } = await supabase
       .from('requests')
       .select('*, support_jobs(*), status_history(*), request_documents(id)')
-      .eq('company', prof.company)
       .order('created_at', { ascending: false })
     setRequests(data || [])
   }

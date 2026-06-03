@@ -82,7 +82,6 @@ export default function CoordinatorDashboard() {
     const { data } = await supabase
       .from('requests')
       .select('*, status_history(*)')
-      .eq('company', p.company)
       .order('created_at', { ascending: false })
     setRequests(data || [])
   }
