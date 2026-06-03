@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/router'
 import { supabase, NDT_STATUSES, JOB_CATEGORIES } from '../../lib/supabase'
 import Layout from '../../components/Layout'
@@ -14,6 +14,54 @@ const MANAGER_NAV = (badge) => [
 ]
 
 const EMPTY_COL = { status: '', method: '', equipment: '', location: '', category: '', requestedBy: '' }
+
+function SearchSelect({ value, onChange, options, placeholder = 'All' }) {
+  const [open, setOpen]   = useState(false)
+  const [query, setQuery] = useState('')
+  const ref               = useRef(null)
+
+  useEffect(() => {
+    function handle(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [])
+
+  const filtered = options.filter(o => o.toLowerCase().includes(query.toLowerCase()))
+  const display  = value || placeholder
+
+  function select(v) { onChange(v); setQuery(''); setOpen(false) }
+
+  return (
+    <div ref={ref} className="relative w-full">
+      <button type="button" onClick={() => { setOpen(o => !o); setQuery('') }}
+        className={`w-full text-left text-xs border rounded px-1.5 py-1 bg-white flex items-center justify-between gap-1 focus:outline-none focus:ring-1 focus:ring-blue-300 ${value ? 'border-blue-400 text-blue-700 font-medium' : 'border-gray-200 text-gray-500'}`}>
+        <span className="truncate">{display}</span>
+        <span className="text-gray-300 shrink-0">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="absolute z-50 top-full left-0 mt-0.5 w-48 bg-white border border-gray-200 rounded shadow-lg">
+          <div className="p-1.5 border-b border-gray-100">
+            <input autoFocus className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-blue-300"
+              placeholder="Search…" value={query} onChange={e => setQuery(e.target.value)} />
+          </div>
+          <div className="max-h-48 overflow-y-auto">
+            <button type="button" onClick={() => select('')}
+              className={`w-full text-left text-xs px-2.5 py-1.5 hover:bg-blue-50 ${!value ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
+              All
+            </button>
+            {filtered.map(o => (
+              <button key={o} type="button" onClick={() => select(o)}
+                className={`w-full text-left text-xs px-2.5 py-1.5 hover:bg-blue-50 truncate ${value === o ? 'text-blue-600 font-medium bg-blue-50/50' : 'text-gray-700'}`}>
+                {o}
+              </button>
+            ))}
+            {filtered.length === 0 && <div className="text-xs text-gray-400 px-2.5 py-2">No matches</div>}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function ManagerRequests() {
   const router = useRouter()
@@ -78,8 +126,8 @@ export default function ManagerRequests() {
     const matchTo       = !dateTo   || r.created_at?.slice(0,10) <= dateTo
     const matchStatus   = !colFilters.status   || r.status === colFilters.status
     const matchMethod   = !colFilters.method   || r.ndt_method === colFilters.method
-    const matchEquip    = !colFilters.equipment || (r.equipment_no || '').toLowerCase().includes(colFilters.equipment.toLowerCase())
-    const matchLoc      = !colFilters.location  || (r.location || '').toLowerCase().includes(colFilters.location.toLowerCase())
+    const matchEquip    = !colFilters.equipment || r.equipment_no === colFilters.equipment
+    const matchLoc      = !colFilters.location  || r.location === colFilters.location
     const matchCat      = !colFilters.category  || r.job_category === colFilters.category
     const matchBy       = !colFilters.requestedBy || r.requested_by_name === colFilters.requestedBy
     return matchSearch && matchFrom && matchTo && matchStatus && matchMethod && matchEquip && matchLoc && matchCat && matchBy
@@ -126,40 +174,22 @@ export default function ManagerRequests() {
             <tr className="border-b border-gray-200 bg-gray-50">
               <td className="px-2 py-1.5"></td>
               <td className="px-2 py-1.5">
-                <select className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300"
-                  value={colFilters.status} onChange={e => setCol('status', e.target.value)}>
-                  <option value="">All</option>
-                  {NDT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <SearchSelect value={colFilters.status} onChange={v => setCol('status', v)} options={NDT_STATUSES} />
               </td>
               <td className="px-2 py-1.5">
-                <select className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300"
-                  value={colFilters.method} onChange={e => setCol('method', e.target.value)}>
-                  <option value="">All</option>
-                  {uniqueVals('ndt_method').map(v => <option key={v} value={v}>{v}</option>)}
-                </select>
+                <SearchSelect value={colFilters.method} onChange={v => setCol('method', v)} options={uniqueVals('ndt_method')} />
               </td>
               <td className="px-2 py-1.5">
-                <input className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300"
-                  placeholder="Filter…" value={colFilters.equipment} onChange={e => setCol('equipment', e.target.value)} />
+                <SearchSelect value={colFilters.equipment} onChange={v => setCol('equipment', v)} options={uniqueVals('equipment_no')} />
               </td>
               <td className="px-2 py-1.5">
-                <input className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300"
-                  placeholder="Filter…" value={colFilters.location} onChange={e => setCol('location', e.target.value)} />
+                <SearchSelect value={colFilters.location} onChange={v => setCol('location', v)} options={uniqueVals('location')} />
               </td>
               <td className="px-2 py-1.5">
-                <select className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300"
-                  value={colFilters.category} onChange={e => setCol('category', e.target.value)}>
-                  <option value="">All</option>
-                  {JOB_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <SearchSelect value={colFilters.category} onChange={v => setCol('category', v)} options={JOB_CATEGORIES} />
               </td>
               <td className="px-2 py-1.5">
-                <select className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300"
-                  value={colFilters.requestedBy} onChange={e => setCol('requestedBy', e.target.value)}>
-                  <option value="">All</option>
-                  {uniqueVals('requested_by_name').map(v => <option key={v} value={v}>{v}</option>)}
-                </select>
+                <SearchSelect value={colFilters.requestedBy} onChange={v => setCol('requestedBy', v)} options={uniqueVals('requested_by_name')} />
               </td>
               <td className="px-2 py-1.5"></td>
               <td className="px-2 py-1.5"></td>
