@@ -1,12 +1,62 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/router'
-import { supabase, NDT_STATUSES, JOB_CATEGORIES } from '../../lib/supabase'
+import { supabase, NDT_STATUSES, JOB_CATEGORIES, NDT_METHODS } from '../../lib/supabase'
 import Layout from '../../components/Layout'
 import { StatusBadge, NDTTimeline } from '../../components/StatusBadge'
 import DocumentUpload from '../../components/DocumentUpload'
 import PrintRequest from '../../components/PrintRequest'
 import RequestComments from '../../components/RequestComments'
 import MethodSelect from '../../components/MethodSelect'
+
+const EMPTY_COL = { status: '', method: '', equipment: '', location: '', category: '', requestedBy: '' }
+
+function SearchSelect({ value, onChange, options, placeholder = 'All' }) {
+  const [open, setOpen]   = useState(false)
+  const [query, setQuery] = useState('')
+  const ref               = useRef(null)
+
+  useEffect(() => {
+    function handle(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [])
+
+  const filtered = options.filter(o => o.toLowerCase().includes(query.toLowerCase()))
+  const display  = value || placeholder
+
+  function select(v) { onChange(v); setQuery(''); setOpen(false) }
+
+  return (
+    <div ref={ref} className="relative w-full">
+      <button type="button" onClick={() => { setOpen(o => !o); setQuery('') }}
+        className={`w-full text-left text-xs border rounded px-1.5 py-1 bg-white flex items-center justify-between gap-1 focus:outline-none focus:ring-1 focus:ring-blue-300 ${value ? 'border-blue-400 text-blue-700 font-medium' : 'border-gray-200 text-gray-500'}`}>
+        <span className="truncate">{display}</span>
+        <span className="text-gray-300 shrink-0">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="absolute z-50 top-full left-0 mt-0.5 w-48 bg-white border border-gray-200 rounded shadow-lg">
+          <div className="p-1.5 border-b border-gray-100">
+            <input autoFocus className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-blue-300"
+              placeholder="Search…" value={query} onChange={e => setQuery(e.target.value)} />
+          </div>
+          <div className="max-h-48 overflow-y-auto">
+            <button type="button" onClick={() => select('')}
+              className={`w-full text-left text-xs px-2.5 py-1.5 hover:bg-blue-50 ${!value ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
+              All
+            </button>
+            {filtered.map(o => (
+              <button key={o} type="button" onClick={() => select(o)}
+                className={`w-full text-left text-xs px-2.5 py-1.5 hover:bg-blue-50 truncate ${value === o ? 'text-blue-600 font-medium bg-blue-50/50' : 'text-gray-700'}`}>
+                {o}
+              </button>
+            ))}
+            {filtered.length === 0 && <div className="text-xs text-gray-400 px-2.5 py-2">No matches</div>}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 const NAV = [
   { href: '/client/requests',     label: 'Dashboard',    icon: '📊' },
@@ -22,11 +72,10 @@ export default function ClientAllRequests() {
   const [selected, setSelected] = useState(null)
   const [docs, setDocs]         = useState([])
   const [printing, setPrinting] = useState(false)
-  const [search, setSearch]     = useState('')
-  const [filter, setFilter]     = useState('All')
-  const [category, setCategory] = useState('')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo]     = useState('')
+  const [search, setSearch]         = useState('')
+  const [colFilters, setColFilters] = useState(EMPTY_COL)
+  const [dateFrom, setDateFrom]     = useState('')
+  const [dateTo, setDateTo]         = useState('')
   const [acting, setActing]     = useState(false)
   const [editMode, setEditMode]   = useState(false)
   const [editForm, setEditForm]   = useState({})
@@ -165,49 +214,42 @@ export default function ClientAllRequests() {
     setTimeout(() => setSuccessMsg(''), 6000)
   }
 
+  const setCol = (key, val) => setColFilters(prev => ({ ...prev, [key]: val }))
+  const hasColFilters = Object.values(colFilters).some(Boolean)
+  const uniqueVals = (key) => [...new Set(requests.map(r => r[key]).filter(Boolean))].sort()
+
   const filtered = requests.filter(r => {
-    const matchStatus   = filter === 'All' || r.status === filter
     const matchSearch   = !search || [r.request_no, r.company, r.location, r.ndt_method, r.requested_by_name, r.equipment_no]
       .filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase())
-    const matchCategory = !category || r.job_category === category
     const matchFrom     = !dateFrom || r.created_at?.slice(0,10) >= dateFrom
     const matchTo       = !dateTo   || r.created_at?.slice(0,10) <= dateTo
-    return matchStatus && matchSearch && matchCategory && matchFrom && matchTo
+    const matchStatus   = !colFilters.status   || r.status === colFilters.status
+    const matchMethod   = !colFilters.method   || r.ndt_method === colFilters.method
+    const matchEquip    = !colFilters.equipment || (r.equipment_no || '').toLowerCase().includes(colFilters.equipment.toLowerCase())
+    const matchLoc      = !colFilters.location  || (r.location || '').toLowerCase().includes(colFilters.location.toLowerCase())
+    const matchCat      = !colFilters.category  || r.job_category === colFilters.category
+    const matchBy       = !colFilters.requestedBy || r.requested_by_name === colFilters.requestedBy
+    return matchSearch && matchFrom && matchTo && matchStatus && matchMethod && matchEquip && matchLoc && matchCat && matchBy
   })
 
   return (
     <Layout profile={profile} nav={NAV}>
       {/* Filter bar */}
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
-        <h1 className="text-xl font-bold">All Requests</h1>
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <h1 className="text-xl font-bold">All Requests <span className="text-sm font-normal text-gray-400">({filtered.length})</span></h1>
         <div className="flex gap-2 flex-wrap items-center">
           <div className="relative">
-            <input className="input w-52 text-sm pl-8" placeholder="Search ID, method, location…"
+            <input className="input w-52 text-sm pl-8" placeholder="Search ID, company, method…"
               value={search} onChange={e => setSearch(e.target.value)} />
             <span className="absolute left-2.5 top-2.5 text-gray-400 text-sm">🔍</span>
           </div>
-          <select className="input text-xs py-1.5 w-36" value={category} onChange={e => setCategory(e.target.value)}>
-            <option value="">All categories</option>
-            {JOB_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
           <input className="input text-xs py-1.5 w-32" type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
           <input className="input text-xs py-1.5 w-32" type="date" value={dateTo}   onChange={e => setDateTo(e.target.value)} />
-          {(category || dateFrom || dateTo) && (
-            <button onClick={() => { setCategory(''); setDateFrom(''); setDateTo('') }}
-              className="text-xs text-blue-600">Clear</button>
+          {(search || dateFrom || dateTo || hasColFilters) && (
+            <button onClick={() => { setSearch(''); setDateFrom(''); setDateTo(''); setColFilters(EMPTY_COL) }}
+              className="text-xs text-blue-600">Clear all</button>
           )}
         </div>
-      </div>
-
-      {/* Status pills */}
-      <div className="flex gap-1.5 flex-wrap mb-4">
-        {['All', ...NDT_STATUSES].map(s => (
-          <button key={s} onClick={() => setFilter(s)}
-            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors whitespace-nowrap
-              ${filter === s ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
-            {s} ({s === 'All' ? requests.length : requests.filter(r => r.status === s).length})
-          </button>
-        ))}
       </div>
 
       {/* Table */}
@@ -215,15 +257,44 @@ export default function ClientAllRequests() {
         <table className="min-w-full text-xs">
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/80">
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">ID</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Status</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Method</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Equipment</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Location</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Category</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Requested By</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Requested On</th>
-              <th className="px-3 py-2.5"></th>
+              <th className="px-3 py-2 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap text-xs">ID</th>
+              <th className="px-3 py-2 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap text-xs">Status</th>
+              <th className="px-3 py-2 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap text-xs">Method</th>
+              <th className="px-3 py-2 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap text-xs">Equipment</th>
+              <th className="px-3 py-2 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap text-xs">Location</th>
+              <th className="px-3 py-2 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap text-xs">Category</th>
+              <th className="px-3 py-2 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap text-xs">Requested By</th>
+              <th className="px-3 py-2 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap text-xs">Requested On</th>
+              <th className="px-3 py-2"></th>
+            </tr>
+            <tr className="border-b border-gray-200 bg-gray-50">
+              <td className="px-2 py-1.5"></td>
+              <td className="px-2 py-1.5">
+                <SearchSelect value={colFilters.status} onChange={v => setCol('status', v)} options={NDT_STATUSES} />
+              </td>
+              <td className="px-2 py-1.5">
+                <SearchSelect value={colFilters.method} onChange={v => setCol('method', v)} options={uniqueVals('ndt_method')} />
+              </td>
+              <td className="px-2 py-1.5">
+                <input className={`w-full text-xs border rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300 ${colFilters.equipment ? 'border-blue-400 text-blue-700 font-medium' : 'border-gray-200 text-gray-500'}`}
+                  placeholder="Search…" value={colFilters.equipment} onChange={e => setCol('equipment', e.target.value)} />
+              </td>
+              <td className="px-2 py-1.5">
+                <input className={`w-full text-xs border rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300 ${colFilters.location ? 'border-blue-400 text-blue-700 font-medium' : 'border-gray-200 text-gray-500'}`}
+                  placeholder="Search…" value={colFilters.location} onChange={e => setCol('location', e.target.value)} />
+              </td>
+              <td className="px-2 py-1.5">
+                <select className={`w-full text-xs border rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300 ${colFilters.category ? 'border-blue-400 text-blue-700 font-medium' : 'border-gray-200 text-gray-500'}`}
+                  value={colFilters.category} onChange={e => setCol('category', e.target.value)}>
+                  <option value="">All</option>
+                  {JOB_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </td>
+              <td className="px-2 py-1.5">
+                <SearchSelect value={colFilters.requestedBy} onChange={v => setCol('requestedBy', v)} options={uniqueVals('requested_by_name')} />
+              </td>
+              <td className="px-2 py-1.5"></td>
+              <td className="px-2 py-1.5"></td>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
