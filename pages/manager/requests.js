@@ -126,8 +126,8 @@ export default function ManagerRequests() {
     const matchTo       = !dateTo   || r.created_at?.slice(0,10) <= dateTo
     const matchStatus   = !colFilters.status   || r.status === colFilters.status
     const matchMethod   = !colFilters.method   || r.ndt_method === colFilters.method
-    const matchEquip    = !colFilters.equipment || r.equipment_no === colFilters.equipment
-    const matchLoc      = !colFilters.location  || r.location === colFilters.location
+    const matchEquip    = !colFilters.equipment || (r.equipment_no || '').toLowerCase().includes(colFilters.equipment.toLowerCase())
+    const matchLoc      = !colFilters.location  || (r.location || '').toLowerCase().includes(colFilters.location.toLowerCase())
     const matchCat      = !colFilters.category  || r.job_category === colFilters.category
     const matchBy       = !colFilters.requestedBy || r.requested_by_name === colFilters.requestedBy
     return matchSearch && matchFrom && matchTo && matchStatus && matchMethod && matchEquip && matchLoc && matchCat && matchBy
@@ -180,13 +180,19 @@ export default function ManagerRequests() {
                 <SearchSelect value={colFilters.method} onChange={v => setCol('method', v)} options={uniqueVals('ndt_method')} />
               </td>
               <td className="px-2 py-1.5">
-                <SearchSelect value={colFilters.equipment} onChange={v => setCol('equipment', v)} options={uniqueVals('equipment_no')} />
+                <input className={`w-full text-xs border rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300 ${colFilters.equipment ? 'border-blue-400 text-blue-700 font-medium' : 'border-gray-200 text-gray-500'}`}
+                  placeholder="Search…" value={colFilters.equipment} onChange={e => setCol('equipment', e.target.value)} />
               </td>
               <td className="px-2 py-1.5">
-                <SearchSelect value={colFilters.location} onChange={v => setCol('location', v)} options={uniqueVals('location')} />
+                <input className={`w-full text-xs border rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300 ${colFilters.location ? 'border-blue-400 text-blue-700 font-medium' : 'border-gray-200 text-gray-500'}`}
+                  placeholder="Search…" value={colFilters.location} onChange={e => setCol('location', e.target.value)} />
               </td>
               <td className="px-2 py-1.5">
-                <SearchSelect value={colFilters.category} onChange={v => setCol('category', v)} options={JOB_CATEGORIES} />
+                <select className={`w-full text-xs border rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300 ${colFilters.category ? 'border-blue-400 text-blue-700 font-medium' : 'border-gray-200 text-gray-500'}`}
+                  value={colFilters.category} onChange={e => setCol('category', e.target.value)}>
+                  <option value="">All</option>
+                  {JOB_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
               </td>
               <td className="px-2 py-1.5">
                 <SearchSelect value={colFilters.requestedBy} onChange={v => setCol('requestedBy', v)} options={uniqueVals('requested_by_name')} />
