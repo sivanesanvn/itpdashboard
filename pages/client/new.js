@@ -4,9 +4,16 @@ import { supabase, JOB_CATEGORIES } from '../../lib/supabase'
 import MethodSelect from '../../components/MethodSelect'
 import Layout from '../../components/Layout'
 
-const NAV = [
-  { href: '/client/requests', label: 'My Requests', icon: '📋' },
-  { href: '/client/new',      label: 'New Request',  icon: '➕' },
+const CLIENT_NAV = [
+  { href: '/client/requests',     label: 'Dashboard',    icon: '📊' },
+  { href: '/client/all-requests', label: 'All Requests', icon: '📋' },
+  { href: '/client/new',          label: 'New Request',  icon: '➕' },
+]
+
+const COORDINATOR_NAV = [
+  { href: '/coordinator/dashboard', label: 'Dashboard',    icon: '📊' },
+  { href: '/coordinator/requests',  label: 'All Requests', icon: '📋' },
+  { href: '/client/new',            label: 'New Request',  icon: '➕' },
 ]
 
 export default function ClientNew() {
@@ -37,7 +44,7 @@ export default function ClientNew() {
     const { data: { user: u } } = await supabase.auth.getUser()
     if (!u) { router.push('/'); return }
     const { data: p } = await supabase.from('profiles').select('*').eq('id', u.id).single()
-    if (!p || !['client','manager'].includes(p.role)) { router.push('/'); return }
+    if (!p || !['client','manager','coordinator'].includes(p.role)) { router.push('/'); return }
     setProfile(p); setUser(u)
 
     // Fetch last request to prefill designation & department
@@ -134,7 +141,7 @@ export default function ClientNew() {
   if (!profile) return <div className="min-h-screen flex items-center justify-center text-gray-400">Loading…</div>
 
   return (
-    <Layout profile={profile} nav={NAV}>
+    <Layout profile={profile} nav={profile?.role === 'coordinator' ? COORDINATOR_NAV : CLIENT_NAV}>
       <div className="max-w-xl mx-auto">
         {step !== 'done' && (
           <div className="flex items-center gap-0 mb-6">
@@ -395,7 +402,7 @@ export default function ClientNew() {
             <h2 className="text-xl font-bold mb-2">Request submitted!</h2>
             <p className="text-gray-500 text-sm mb-6">Our NDT team will review and contact you to confirm the schedule.</p>
             <div className="flex gap-3 justify-center">
-              <button className="btn btn-primary" onClick={() => router.push('/client/requests')}>View my requests →</button>
+              <button className="btn btn-primary" onClick={() => router.push(profile?.role === 'coordinator' ? '/coordinator/requests' : '/client/requests')}>View my requests →</button>
               <button className="btn btn-ghost" onClick={() => {
                 setStep(1)
                 setS1(prev => ({ ...prev, location:'',equipment_no:'',contact_name:'',contact_phone:'',ndt_method:'',scope_qty:'',attachments:[],description:'',date_needed:'',priority:'Normal',needs_scaffold:false,needs_insulation:false,needs_painting:false }))
