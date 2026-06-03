@@ -200,16 +200,22 @@ create trigger log_support_status_trigger
 -- ROW LEVEL SECURITY
 -- ============================================================
 
+-- Helper: returns current user's role without triggering RLS (security definer bypasses policies)
+create or replace function public.my_role()
+returns text language sql security definer stable as $$
+  select role from public.profiles where id = auth.uid()
+$$;
+
 -- Profiles: own row + manager sees all
 create policy "own profile" on public.profiles for select using (auth.uid() = id);
 create policy "manager all profiles" on public.profiles for all using (
-  exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'manager')
+  public.my_role() = 'manager'
 );
 
 -- Requests: clients own; manager/tech see all; scaffold/insulation/painting see requests they have a support job for
 create policy "requests access" on public.requests for all using (
   client_id = auth.uid()
-  or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('manager','tech'))
+  or public.my_role() in ('manager','tech','coordinator')
   or exists (
     select 1 from public.support_jobs sj
     where sj.request_id = id and sj.contractor_id = auth.uid()
@@ -219,7 +225,7 @@ create policy "requests access" on public.requests for all using (
 -- Support jobs: assigned contractor + manager + client of that request
 create policy "support_jobs access" on public.support_jobs for all using (
   contractor_id = auth.uid()
-  or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'manager')
+  or public.my_role() = 'manager'
   or exists (
     select 1 from public.requests r where r.id = request_id and r.client_id = auth.uid()
   )
@@ -231,7 +237,7 @@ create policy "history access" on public.status_history for select using (
     select 1 from public.requests r where r.id = request_id
     and (
       r.client_id = auth.uid()
-      or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role in ('manager','tech','scaffold','insulation','painting'))
+      or public.my_role() in ('manager','tech','coordinator','scaffold','insulation','painting')
     )
   )
 );
