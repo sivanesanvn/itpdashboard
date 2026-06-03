@@ -13,15 +13,16 @@ const MANAGER_NAV = (badge) => [
   { href: '/manager/schedule',  label: 'Schedule', icon: '📅' },
 ]
 
+const EMPTY_COL = { status: '', method: '', equipment: '', location: '', category: '', requestedBy: '' }
+
 export default function ManagerRequests() {
   const router = useRouter()
   const [profile, setProfile] = useState(null)
   const [requests, setRequests] = useState([])
-  const [filter, setFilter]     = useState('All')
   const [search, setSearch]     = useState('')
-  const [category, setCategory] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo]     = useState('')
+  const [colFilters, setColFilters] = useState(EMPTY_COL)
   const [selected, setSelected] = useState(null)
   const [docs, setDocs]         = useState([])
   const [printing, setPrinting] = useState(false)
@@ -65,14 +66,23 @@ export default function ManagerRequests() {
     setSelected(prev => prev ? { ...prev, status } : null)
   }
 
+  const setCol = (key, val) => setColFilters(prev => ({ ...prev, [key]: val }))
+  const hasColFilters = Object.values(colFilters).some(Boolean)
+
+  const uniqueVals = (key) => [...new Set(requests.map(r => r[key]).filter(Boolean))].sort()
+
   const filtered = requests.filter(r => {
-    const matchStatus   = filter === 'All' || r.status === filter
     const matchSearch   = !search || [r.request_no, r.company, r.location, r.ndt_method, r.requested_by_name, r.equipment_no]
       .filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase())
-    const matchCategory = !category || r.job_category === category
     const matchFrom     = !dateFrom || r.created_at?.slice(0,10) >= dateFrom
     const matchTo       = !dateTo   || r.created_at?.slice(0,10) <= dateTo
-    return matchStatus && matchSearch && matchCategory && matchFrom && matchTo
+    const matchStatus   = !colFilters.status   || r.status === colFilters.status
+    const matchMethod   = !colFilters.method   || r.ndt_method === colFilters.method
+    const matchEquip    = !colFilters.equipment || (r.equipment_no || '').toLowerCase().includes(colFilters.equipment.toLowerCase())
+    const matchLoc      = !colFilters.location  || (r.location || '').toLowerCase().includes(colFilters.location.toLowerCase())
+    const matchCat      = !colFilters.category  || r.job_category === colFilters.category
+    const matchBy       = !colFilters.requestedBy || r.requested_by_name === colFilters.requestedBy
+    return matchSearch && matchFrom && matchTo && matchStatus && matchMethod && matchEquip && matchLoc && matchCat && matchBy
   })
 
   const newCount = requests.filter(r => r.status === 'New request').length
@@ -81,36 +91,21 @@ export default function ManagerRequests() {
     <Layout profile={profile} nav={MANAGER_NAV(newCount)}>
 
       {/* ── Page header + filters ── */}
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
-        <h1 className="text-xl font-bold">All Requests</h1>
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <h1 className="text-xl font-bold">All Requests <span className="text-sm font-normal text-gray-400">({filtered.length})</span></h1>
         <div className="flex gap-2 flex-wrap items-center">
           <div className="relative">
             <input className="input w-52 text-sm pl-8" placeholder="Search ID, company, method…"
               value={search} onChange={e => setSearch(e.target.value)} />
             <span className="absolute left-2.5 top-2.5 text-gray-400 text-sm">🔍</span>
           </div>
-          <select className="input text-xs py-1.5 w-36" value={category} onChange={e => setCategory(e.target.value)}>
-            <option value="">All categories</option>
-            {JOB_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
           <input className="input text-xs py-1.5 w-32" type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
           <input className="input text-xs py-1.5 w-32" type="date" value={dateTo}   onChange={e => setDateTo(e.target.value)} />
-          {(category || dateFrom || dateTo) && (
-            <button onClick={() => { setCategory(''); setDateFrom(''); setDateTo('') }}
-              className="text-xs text-blue-600">Clear</button>
+          {(search || dateFrom || dateTo || hasColFilters) && (
+            <button onClick={() => { setSearch(''); setDateFrom(''); setDateTo(''); setColFilters(EMPTY_COL) }}
+              className="text-xs text-blue-600">Clear all</button>
           )}
         </div>
-      </div>
-
-      {/* ── Status pills ── */}
-      <div className="flex gap-1.5 flex-wrap mb-4">
-        {['All', ...NDT_STATUSES].map(s => (
-          <button key={s} onClick={() => setFilter(s)}
-            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors whitespace-nowrap
-              ${filter === s ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
-            {s} ({s === 'All' ? requests.length : requests.filter(r => r.status === s).length})
-          </button>
-        ))}
       </div>
 
       {/* ── Table ── */}
@@ -118,15 +113,56 @@ export default function ManagerRequests() {
         <table className="min-w-full text-xs">
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/80">
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">ID</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Status</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Method</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Equipment</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Location</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Category</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Requested By</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Requested On</th>
-              <th className="px-3 py-2.5"></th>
+              <th className="px-3 py-2 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap text-xs">ID</th>
+              <th className="px-3 py-2 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap text-xs">Status</th>
+              <th className="px-3 py-2 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap text-xs">Method</th>
+              <th className="px-3 py-2 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap text-xs">Equipment</th>
+              <th className="px-3 py-2 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap text-xs">Location</th>
+              <th className="px-3 py-2 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap text-xs">Category</th>
+              <th className="px-3 py-2 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap text-xs">Requested By</th>
+              <th className="px-3 py-2 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap text-xs">Requested On</th>
+              <th className="px-3 py-2"></th>
+            </tr>
+            <tr className="border-b border-gray-200 bg-gray-50">
+              <td className="px-2 py-1.5"></td>
+              <td className="px-2 py-1.5">
+                <select className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300"
+                  value={colFilters.status} onChange={e => setCol('status', e.target.value)}>
+                  <option value="">All</option>
+                  {NDT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </td>
+              <td className="px-2 py-1.5">
+                <select className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300"
+                  value={colFilters.method} onChange={e => setCol('method', e.target.value)}>
+                  <option value="">All</option>
+                  {uniqueVals('ndt_method').map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </td>
+              <td className="px-2 py-1.5">
+                <input className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300"
+                  placeholder="Filter…" value={colFilters.equipment} onChange={e => setCol('equipment', e.target.value)} />
+              </td>
+              <td className="px-2 py-1.5">
+                <input className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300"
+                  placeholder="Filter…" value={colFilters.location} onChange={e => setCol('location', e.target.value)} />
+              </td>
+              <td className="px-2 py-1.5">
+                <select className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300"
+                  value={colFilters.category} onChange={e => setCol('category', e.target.value)}>
+                  <option value="">All</option>
+                  {JOB_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </td>
+              <td className="px-2 py-1.5">
+                <select className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300"
+                  value={colFilters.requestedBy} onChange={e => setCol('requestedBy', e.target.value)}>
+                  <option value="">All</option>
+                  {uniqueVals('requested_by_name').map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </td>
+              <td className="px-2 py-1.5"></td>
+              <td className="px-2 py-1.5"></td>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
