@@ -24,7 +24,7 @@ export default function ManagerTechnicians() {
     const [{ data: techList }, { data: scaffList }, { data: reqs }] = await Promise.all([
       supabase.from('profiles').select('*').eq('role','tech'),
       supabase.from('profiles').select('*').eq('role','scaffold'),
-      supabase.from('requests').select('tech_id,status').in('status',['Scheduled','On-going']),
+      supabase.from('requests').select('tech_id,status').in('status',['NDT scheduled','NDT in progress']),
     ])
     setTechs(techList ?? [])
     setScaffs(scaffList ?? [])

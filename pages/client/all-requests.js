@@ -111,7 +111,7 @@ export default function ClientAllRequests() {
       return
     }
     setEditSaving(true)
-    const wasScheduled = selected.status === 'Scheduled'
+    const wasScheduled = selected.status === 'NDT scheduled'
 
     const { error } = await supabase.from('requests').update({
       location:         editForm.location,
@@ -264,7 +264,7 @@ export default function ClientAllRequests() {
                 <p className="text-xs text-gray-400">{selected.company} · {selected.ndt_method}</p>
               </div>
               <div className="flex items-center gap-2">
-                {['New request','Scheduled'].includes(selected.status) && !editMode && (
+                {['New request','NDT scheduled'].includes(selected.status) && !editMode && (
                   <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Edit</button>
                 )}
                 {editMode && (
@@ -284,7 +284,7 @@ export default function ClientAllRequests() {
             {/* Edit form */}
             {editMode && (
               <div className="p-5 space-y-4">
-                {selected.status === 'Scheduled' && (
+                {selected.status === 'NDT scheduled' && (
                   <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-800">
                     ⚠ This request is already scheduled. Saving changes will notify the NDT Manager to reschedule.
                   </div>
@@ -389,7 +389,7 @@ export default function ClientAllRequests() {
                 <div className="flex gap-3 pb-2">
                   <button onClick={() => setEditMode(false)} className="btn btn-ghost flex-1 justify-center text-sm">Cancel</button>
                   <button onClick={saveEdit} disabled={editSaving} className="btn btn-primary flex-1 justify-center text-sm">
-                    {editSaving ? 'Saving…' : selected.status === 'Scheduled' ? '💾 Save & notify manager' : '💾 Save changes'}
+                    {editSaving ? 'Saving…' : selected.status === 'NDT scheduled' ? '💾 Save & notify manager' : '💾 Save changes'}
                   </button>
                 </div>
               </div>
@@ -400,21 +400,44 @@ export default function ClientAllRequests() {
               <div className="p-5 space-y-4">
                 <div className="card"><NDTTimeline status={selected.status} /></div>
 
-                {selected.status === 'Draft Report Submitted' && (
+                {selected.status === 'Draft report submitted' && (
                   <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
                     <div className="text-sm font-semibold text-indigo-800 mb-1">📋 Draft report ready for review</div>
-                    <p className="text-xs text-indigo-600 mb-3">Download the report below. If satisfied, click Accept.</p>
-                    <button onClick={() => updateStatus('Draft Report Accepted')} disabled={acting}
-                      className="btn btn-primary text-xs w-full justify-center"
-                      style={{background:'#059669',borderColor:'#059669'}}>
-                      {acting ? 'Updating…' : '✅ Accept draft report'}
-                    </button>
+                    <p className="text-xs text-indigo-600 mb-3">Download the report below. If satisfied, click Accept. If revisions are needed, click Reject.</p>
+                    <div className="flex gap-2">
+                      <button onClick={() => updateStatus('Draft report accepted')} disabled={acting}
+                        className="btn btn-success flex-1 justify-center text-xs">
+                        {acting ? 'Updating…' : '✅ Accept draft report'}
+                      </button>
+                      <button onClick={() => updateStatus('NDT in progress')} disabled={acting}
+                        className="btn btn-danger flex-1 justify-center text-xs">
+                        {acting ? 'Updating…' : '✗ Reject — request revision'}
+                      </button>
+                    </div>
                   </div>
                 )}
 
-                {selected.status === 'Draft Report Accepted' && (
+                {selected.status === 'Draft report accepted' && (
                   <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-800">
-                    ✅ Draft report accepted — Cutech NDT team will issue the final report.
+                    ✅ Draft report accepted — Cutech NDT team will issue the final report. Reinstatement work may proceed in parallel.
+                  </div>
+                )}
+
+                {selected.status === 'Final report submitted' && (
+                  <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 text-xs text-sky-800">
+                    📄 Final report submitted — available for download below.
+                  </div>
+                )}
+
+                {selected.status === 'Reinstatement in progress' && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 text-xs text-orange-800">
+                    🔧 Reinstatement work in progress. Final report may also be available below.
+                  </div>
+                )}
+
+                {selected.status === 'Closed' && (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-800">
+                    ✅ Request closed — all work complete.
                   </div>
                 )}
 
@@ -502,7 +525,7 @@ export default function ClientAllRequests() {
 
                 <RequestComments requestId={selected.id} profile={profile} />
 
-                {['New request','Scheduled'].includes(selected.status) && (
+                {['New request','Scaffold erection in progress','Insulation removal in progress','Ready for NDT'].includes(selected.status) && (
                   <button onClick={cancelRequest} disabled={acting}
                     className="w-full text-xs text-red-500 border border-red-200 rounded-lg py-2 hover:bg-red-50 transition-colors">
                     ✕ Cancel this request

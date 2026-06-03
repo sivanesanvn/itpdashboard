@@ -55,7 +55,7 @@ export default function TechJobs() {
     if (!uploadErr) {
       const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName)
       await supabase.from('requests').update({
-        status:      'Report submitted',
+        status:      'Draft report submitted',
         report_url:  urlData.publicUrl,
         report_name: reportFile.name,
       }).eq('id', reportModal.id)
@@ -69,8 +69,8 @@ export default function TechJobs() {
 
   if (loading || !profile) return <div className="flex items-center justify-center h-screen text-sm text-gray-400">Loading…</div>
 
-  const active  = jobs.filter(j => ['Scheduled','On-going','Site work completed'].includes(j.status))
-  const history = jobs.filter(j => ['Report submitted','Report accepted'].includes(j.status))
+  const active  = jobs.filter(j => ['NDT scheduled','NDT in progress','Draft report submitted','Draft report accepted'].includes(j.status))
+  const history = jobs.filter(j => ['Final report submitted','Reinstatement in progress','Closed'].includes(j.status))
 
   return (
     <Layout profile={profile}>
@@ -111,19 +111,19 @@ export default function TechJobs() {
 
                 {/* Action buttons */}
                 <div className="flex gap-2 mt-3 flex-wrap">
-                  {j.status === 'Scheduled' && (
-                    <button className="btn btn-primary btn-sm" onClick={() => updateStatus(j.id,'On-going')} disabled={saving}>
-                      ▶ Mark on-going
+                  {j.status === 'NDT scheduled' && (
+                    <button className="btn btn-primary btn-sm" onClick={() => updateStatus(j.id,'NDT in progress')} disabled={saving}>
+                      ▶ Mark NDT in progress
                     </button>
                   )}
-                  {j.status === 'On-going' && (
-                    <button className="btn btn-sm" onClick={() => updateStatus(j.id,'Site work completed')} disabled={saving}>
-                      ✓ Mark site complete
-                    </button>
-                  )}
-                  {j.status === 'Site work completed' && (
+                  {j.status === 'NDT in progress' && (
                     <button className="btn btn-success btn-sm" onClick={() => { setReportModal(j); setReportFile(null) }}>
-                      📤 Submit report
+                      📤 Submit draft report
+                    </button>
+                  )}
+                  {j.status === 'Draft report accepted' && (
+                    <button className="btn btn-primary btn-sm" onClick={() => updateStatus(j.id,'Final report submitted')} disabled={saving}>
+                      📄 Submit final report
                     </button>
                   )}
                 </div>

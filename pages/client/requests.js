@@ -4,7 +4,7 @@ import { supabase, NDT_STATUSES, JOB_CATEGORIES, NDT_METHODS } from '../../lib/s
 import Layout from '../../components/Layout'
 import DonutChart from '../../components/DonutChart'
 
-const ACTIVE_STATUSES = NDT_STATUSES.filter(s => !['Report accepted','Cancelled'].includes(s))
+const ACTIVE_STATUSES = NDT_STATUSES.filter(s => !['Closed','Cancelled'].includes(s))
 
 const NAV = [
   { href: '/client/requests',     label: 'Dashboard',    icon: '📊' },
@@ -45,8 +45,8 @@ export default function ClientDashboard() {
 
   const active        = requests.filter(r => ACTIVE_STATUSES.includes(r.status))
   const overdue       = requests.filter(r => r.date_needed && new Date(r.date_needed) < new Date()
-    && !['Report accepted','Cancelled','Draft Report Accepted'].includes(r.status))
-  const awaitingReview = requests.filter(r => r.status === 'Draft Report Submitted')
+    && !['Closed','Cancelled','Draft report accepted','Final report submitted','Reinstatement in progress'].includes(r.status))
+  const awaitingReview = requests.filter(r => r.status === 'Draft report submitted')
 
   return (
     <Layout profile={profile} nav={NAV}>
@@ -100,19 +100,23 @@ export default function ClientDashboard() {
           <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">By Status</div>
           <div className="flex items-center gap-3">
             <DonutChart size={110} data={[
-              { label: 'New',       value: periodRequests.filter(r => r.status === 'New request').length,      color: '#3b82f6' },
-              { label: 'Active',    value: periodRequests.filter(r => ['Scheduled','Site Work On-going'].includes(r.status)).length, color: '#f59e0b' },
-              { label: 'Reporting', value: periodRequests.filter(r => ['Site work completed','Draft Report Submitted','Draft Report Accepted'].includes(r.status)).length, color: '#6366f1' },
-              { label: 'Done',      value: periodRequests.filter(r => r.status === 'Report accepted').length,  color: '#10b981' },
-              { label: 'Cancelled', value: periodRequests.filter(r => r.status === 'Cancelled').length,        color: '#ef4444' },
+              { label: 'New',        value: periodRequests.filter(r => r.status === 'New request').length,      color: '#3b82f6' },
+              { label: 'Prep',       value: periodRequests.filter(r => ['Scaffold erection in progress','Insulation removal in progress','Ready for NDT'].includes(r.status)).length, color: '#f97316' },
+              { label: 'Active',     value: periodRequests.filter(r => ['NDT scheduled','NDT in progress'].includes(r.status)).length, color: '#f59e0b' },
+              { label: 'Reporting',  value: periodRequests.filter(r => ['Draft report submitted','Draft report accepted'].includes(r.status)).length, color: '#6366f1' },
+              { label: 'Finalising', value: periodRequests.filter(r => ['Final report submitted','Reinstatement in progress'].includes(r.status)).length, color: '#0ea5e9' },
+              { label: 'Closed',     value: periodRequests.filter(r => r.status === 'Closed').length,           color: '#10b981' },
+              { label: 'Cancelled',  value: periodRequests.filter(r => r.status === 'Cancelled').length,        color: '#ef4444' },
             ]} />
             <div className="flex flex-col gap-1 text-xs">
               {[
-                { label: 'New',       color: '#3b82f6', value: periodRequests.filter(r => r.status === 'New request').length },
-                { label: 'Active',    color: '#f59e0b', value: periodRequests.filter(r => ['Scheduled','Site Work On-going'].includes(r.status)).length },
-                { label: 'Reporting', color: '#6366f1', value: periodRequests.filter(r => ['Site work completed','Draft Report Submitted','Draft Report Accepted'].includes(r.status)).length },
-                { label: 'Done',      color: '#10b981', value: periodRequests.filter(r => r.status === 'Report accepted').length },
-                { label: 'Cancelled', color: '#ef4444', value: periodRequests.filter(r => r.status === 'Cancelled').length },
+                { label: 'New',        color: '#3b82f6', value: periodRequests.filter(r => r.status === 'New request').length },
+                { label: 'Prep',       color: '#f97316', value: periodRequests.filter(r => ['Scaffold erection in progress','Insulation removal in progress','Ready for NDT'].includes(r.status)).length },
+                { label: 'Active',     color: '#f59e0b', value: periodRequests.filter(r => ['NDT scheduled','NDT in progress'].includes(r.status)).length },
+                { label: 'Reporting',  color: '#6366f1', value: periodRequests.filter(r => ['Draft report submitted','Draft report accepted'].includes(r.status)).length },
+                { label: 'Finalising', color: '#0ea5e9', value: periodRequests.filter(r => ['Final report submitted','Reinstatement in progress'].includes(r.status)).length },
+                { label: 'Closed',     color: '#10b981', value: periodRequests.filter(r => r.status === 'Closed').length },
+                { label: 'Cancelled',  color: '#ef4444', value: periodRequests.filter(r => r.status === 'Cancelled').length },
               ].map(l => (
                 <div key={l.label} className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full flex-shrink-0" style={{background: l.color}} />

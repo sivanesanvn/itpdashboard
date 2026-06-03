@@ -1,7 +1,7 @@
-import { NDT_STATUSES } from '../lib/supabase'
+import { NDT_TIMELINE_STEPS } from '../lib/supabase'
 
 export default function PrintRequest({ request: r, docs = [], onClose }) {
-  const si = NDT_STATUSES.indexOf(r.status)
+  const si = NDT_TIMELINE_STEPS.indexOf(r.status)
 
   function openPrintTab() {
     const html = generatePrintHTML(r, si, docs)
@@ -237,7 +237,7 @@ export default function PrintRequest({ request: r, docs = [], onClose }) {
 }
 
 function generatePrintHTML(r, si, docs) {
-  const statuses = ['New request','Scheduled','On-going','Site work completed','Report submitted','Report accepted']
+  const statuses = NDT_TIMELINE_STEPS
   const timelineHTML = statuses.map((s, i) => {
     const done = i < si, active = i === si
     const bg    = done ? '#1D9E75' : active ? '#185FA5' : '#e5e7eb'

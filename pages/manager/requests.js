@@ -267,7 +267,7 @@ export default function ManagerRequests() {
 
               <RequestComments requestId={selected.id} profile={profile} />
 
-              {['New request','Scheduled'].includes(selected.status) && (
+              {!['Closed','Cancelled'].includes(selected.status) && (
                 <button onClick={async () => {
                   if (!confirm('Cancel request ' + selected.request_no + '?')) return
                   await supabase.from('requests').update({ status: 'Cancelled' }).eq('id', selected.id)

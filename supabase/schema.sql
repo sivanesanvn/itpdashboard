@@ -72,8 +72,18 @@ create table public.requests (
   step2_complete    boolean default false,
   -- Status
   status            text default 'New request' check (status in (
-    'New request','Scheduled','On-going',
-    'Site work completed','Report submitted','Report accepted'
+    'New request',
+    'Scaffold erection in progress',
+    'Insulation removal in progress',
+    'Ready for NDT',
+    'NDT scheduled',
+    'NDT in progress',
+    'Draft report submitted',
+    'Draft report accepted',
+    'Final report submitted',
+    'Reinstatement in progress',
+    'Closed',
+    'Cancelled'
   )),
   tech_id           uuid references public.profiles(id),
   tech_name         text,
@@ -121,7 +131,7 @@ create table public.support_jobs (
   contractor_name  text,
   contractor_role  text check (contractor_role in ('scaffold','insulation','painting')),
   status           text default 'Pending' check (status in (
-    'Pending','Erection','Ready to use','Dismantling','Completed'
+    'Pending','Erection','Ready to use','Dismantling','In progress','Completed'
   )),
   notes            text,
   created_at       timestamptz default now(),
