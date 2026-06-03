@@ -53,7 +53,7 @@ export default function ManagerDashboard() {
     if (!schedDate || !schedTech) return
     setSaving(true)
     await supabase.from('requests').update({
-      status: 'Scheduled',
+      status: 'NDT scheduled',
       scheduled_date: schedDate,
       tech_id: schedTech,
       manager_notes: schedNotes,
@@ -66,8 +66,8 @@ export default function ManagerDashboard() {
   if (loading) return <LoadingScreen />
 
   const newReqs     = requests.filter(r => r.status === 'New request')
-  const activeReqs  = requests.filter(r => ['Scheduled','On-going'].includes(r.status))
-  const doneReqs    = requests.filter(r => ['Site work completed','Report submitted','Report accepted'].includes(r.status))
+  const activeReqs  = requests.filter(r => ['NDT scheduled','NDT in progress'].includes(r.status))
+  const doneReqs    = requests.filter(r => ['Draft report submitted','Draft report accepted','Final report submitted','Reinstatement in progress','Closed'].includes(r.status))
 
   return (
     <Layout profile={profile} newCount={newReqs.length}>
@@ -78,8 +78,8 @@ export default function ManagerDashboard() {
         <div className="grid grid-cols-4 gap-3 mb-6">
           {[
             { label: 'New requests', value: newReqs.length,    color: 'text-blue-700' },
-            { label: 'Scheduled',    value: requests.filter(r=>r.status==='Scheduled').length, color: 'text-purple-700' },
-            { label: 'On-going',     value: requests.filter(r=>r.status==='On-going').length,  color: 'text-amber-700' },
+            { label: 'NDT scheduled', value: requests.filter(r=>r.status==='NDT scheduled').length, color: 'text-purple-700' },
+            { label: 'NDT in progress', value: requests.filter(r=>r.status==='NDT in progress').length, color: 'text-amber-700' },
             { label: 'Completed',    value: doneReqs.length,   color: 'text-teal-700' },
           ].map(s => (
             <div key={s.label} className="card text-center py-3">

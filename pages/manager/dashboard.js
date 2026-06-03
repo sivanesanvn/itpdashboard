@@ -48,7 +48,7 @@ export default function ManagerDashboard() {
   async function scheduleRequest({ requestId, techId, techName, date, notes, supportJobs }) {
     // Update main request
     await supabase.from('requests').update({
-      status: 'Scheduled',
+      status: 'NDT scheduled',
       tech_id: techId,
       tech_name: techName,
       scheduled_date: date,
@@ -90,8 +90,8 @@ export default function ManagerDashboard() {
 
   const newBadge    = requests.filter(r => r.status === 'New request').length
   const newCount    = periodRequests.filter(r => r.status === 'New request').length
-  const activeCount = periodRequests.filter(r => ['Scheduled','Site Work On-going'].includes(r.status)).length
-  const doneCount   = periodRequests.filter(r => ['Site work completed','Draft Report Submitted','Draft Report Accepted','Report accepted'].includes(r.status)).length
+  const activeCount = periodRequests.filter(r => ['NDT scheduled','NDT in progress'].includes(r.status)).length
+  const doneCount   = periodRequests.filter(r => ['Draft report submitted','Draft report accepted','Final report submitted','Reinstatement in progress','Closed'].includes(r.status)).length
 
   const nav = [
     { href: '/manager/dashboard', label: 'Dashboard', icon: '📊', badge: newBadge },
@@ -137,19 +137,23 @@ export default function ManagerDashboard() {
           <div className="section-title mb-3">By Status</div>
           <div className="flex items-center gap-4">
             <DonutChart size={120} data={[
-              { label: 'New',       value: periodRequests.filter(r => r.status === 'New request').length,      color: '#3b82f6' },
-              { label: 'Active',    value: periodRequests.filter(r => ['Scheduled','Site Work On-going'].includes(r.status)).length, color: '#f59e0b' },
-              { label: 'Reporting', value: periodRequests.filter(r => ['Site work completed','Draft Report Submitted','Draft Report Accepted'].includes(r.status)).length, color: '#6366f1' },
-              { label: 'Done',      value: periodRequests.filter(r => r.status === 'Report accepted').length,  color: '#10b981' },
-              { label: 'Cancelled', value: periodRequests.filter(r => r.status === 'Cancelled').length,        color: '#ef4444' },
+              { label: 'New',        value: periodRequests.filter(r => r.status === 'New request').length,      color: '#3b82f6' },
+              { label: 'Prep',       value: periodRequests.filter(r => ['Scaffold erection in progress','Insulation removal in progress','Ready for NDT'].includes(r.status)).length, color: '#f97316' },
+              { label: 'Active',     value: periodRequests.filter(r => ['NDT scheduled','NDT in progress'].includes(r.status)).length, color: '#f59e0b' },
+              { label: 'Reporting',  value: periodRequests.filter(r => ['Draft report submitted','Draft report accepted'].includes(r.status)).length, color: '#6366f1' },
+              { label: 'Finalising', value: periodRequests.filter(r => ['Final report submitted','Reinstatement in progress'].includes(r.status)).length, color: '#0ea5e9' },
+              { label: 'Closed',     value: periodRequests.filter(r => r.status === 'Closed').length,           color: '#10b981' },
+              { label: 'Cancelled',  value: periodRequests.filter(r => r.status === 'Cancelled').length,        color: '#ef4444' },
             ]} />
             <div className="flex flex-col gap-1.5 text-xs">
               {[
-                { label: 'New',       color: '#3b82f6', value: periodRequests.filter(r => r.status === 'New request').length },
-                { label: 'Active',    color: '#f59e0b', value: periodRequests.filter(r => ['Scheduled','Site Work On-going'].includes(r.status)).length },
-                { label: 'Reporting', color: '#6366f1', value: periodRequests.filter(r => ['Site work completed','Draft Report Submitted','Draft Report Accepted'].includes(r.status)).length },
-                { label: 'Done',      color: '#10b981', value: periodRequests.filter(r => r.status === 'Report accepted').length },
-                { label: 'Cancelled', color: '#ef4444', value: periodRequests.filter(r => r.status === 'Cancelled').length },
+                { label: 'New',        color: '#3b82f6', value: periodRequests.filter(r => r.status === 'New request').length },
+                { label: 'Prep',       color: '#f97316', value: periodRequests.filter(r => ['Scaffold erection in progress','Insulation removal in progress','Ready for NDT'].includes(r.status)).length },
+                { label: 'Active',     color: '#f59e0b', value: periodRequests.filter(r => ['NDT scheduled','NDT in progress'].includes(r.status)).length },
+                { label: 'Reporting',  color: '#6366f1', value: periodRequests.filter(r => ['Draft report submitted','Draft report accepted'].includes(r.status)).length },
+                { label: 'Finalising', color: '#0ea5e9', value: periodRequests.filter(r => ['Final report submitted','Reinstatement in progress'].includes(r.status)).length },
+                { label: 'Closed',     color: '#10b981', value: periodRequests.filter(r => r.status === 'Closed').length },
+                { label: 'Cancelled',  color: '#ef4444', value: periodRequests.filter(r => r.status === 'Cancelled').length },
               ].map(l => (
                 <div key={l.label} className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{background: l.color}} />
@@ -259,9 +263,9 @@ export default function ManagerDashboard() {
       {/* Today's active jobs */}
       <div className="card">
         <div className="section-title">🔧 Active jobs</div>
-        {requests.filter(r => ['Scheduled','On-going'].includes(r.status)).length === 0
+        {requests.filter(r => ['NDT scheduled','NDT in progress'].includes(r.status)).length === 0
           ? <p className="text-sm text-gray-400">No active jobs today.</p>
-          : requests.filter(r => ['Scheduled','On-going'].includes(r.status)).map(r => (
+          : requests.filter(r => ['NDT scheduled','NDT in progress'].includes(r.status)).map(r => (
             <div key={r.id} className="flex items-center gap-3 py-2.5 border-b last:border-0 border-gray-50">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">

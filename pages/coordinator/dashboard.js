@@ -6,7 +6,7 @@ import { StatusBadge, NDTTimeline, SupportJobBadge } from '../../components/Stat
 import DocumentUpload from '../../components/DocumentUpload'
 import PrintRequest from '../../components/PrintRequest'
 
-const ACTIVE = ['New request','Scheduled','Site Work On-going','Site work completed','Draft Report Submitted','Draft Report Accepted']
+const ACTIVE = ['New request','Scaffold erection in progress','Insulation removal in progress','Ready for NDT','NDT scheduled','NDT in progress','Draft report submitted','Draft report accepted','Final report submitted','Reinstatement in progress']
 
 const NAV = (badge) => [
   { href: '/coordinator/dashboard', label: 'Dashboard', icon: '📊' },
@@ -60,8 +60,8 @@ export default function CoordinatorDashboard() {
   const total = requests.length
   const active = requests.filter(r => ACTIVE.includes(r.status)).length
   const overdue = requests.filter(r => r.date_needed && new Date(r.date_needed) < new Date() && ACTIVE.includes(r.status)).length
-  const awaitingReview = requests.filter(r => r.status === 'Draft Report Submitted').length
-  const completed = requests.filter(r => r.status === 'Report accepted').length
+  const awaitingReview = requests.filter(r => r.status === 'Draft report submitted').length
+  const completed = requests.filter(r => r.status === 'Closed').length
 
   // Workload by requestor
   const byRequestor = {}
@@ -127,7 +127,7 @@ export default function CoordinatorDashboard() {
           {awaitingReview > 0 && (
             <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 mb-4">
               <div className="text-xs font-semibold text-indigo-700 mb-2">📋 Reports waiting for review</div>
-              {requests.filter(r => r.status === 'Draft Report Submitted').map(r => (
+              {requests.filter(r => r.status === 'Draft report submitted').map(r => (
                 <div key={r.id} className="flex items-center gap-2 py-1 cursor-pointer"
                   onClick={() => { setActiveTab('requests'); setTimeout(() => openRequest(r), 100) }}>
                   <span className="text-xs font-bold text-indigo-700">{r.request_no}</span>
@@ -308,7 +308,7 @@ export default function CoordinatorDashboard() {
                   <div key={r.id}
                     className={`bg-white border rounded-lg px-3 py-2 cursor-pointer hover:shadow-sm transition-all
                       ${r.status === 'Cancelled' ? 'opacity-50 border-gray-100' : 'border-gray-100 hover:border-blue-200'}
-                      ${r.status === 'Draft Report Submitted' ? 'border-l-4 border-l-indigo-400' : ''}`}
+                      ${r.status === 'Draft report submitted' ? 'border-l-4 border-l-indigo-400' : ''}`}
                     onClick={() => openRequest(r)}>
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-xs text-blue-700 w-16 shrink-0">{r.request_no}</span>
@@ -369,7 +369,7 @@ export default function CoordinatorDashboard() {
                   label="Supporting documents" existingDocs={docs} onUploaded={reloadDocs} />
               </div>
 
-              {['Draft Report Submitted','Draft Report Accepted','Report accepted'].includes(selected.status) && (
+              {['Draft report submitted','Draft report accepted','Final report submitted','Closed'].includes(selected.status) && (
                 <div className="card">
                   <DocumentUpload requestId={selected.id} profile={profile} fileType="report"
                     label="NDT Report" existingDocs={docs} onUploaded={reloadDocs} />

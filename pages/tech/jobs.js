@@ -8,9 +8,9 @@ import PrintRequest from '../../components/PrintRequest'
 import RequestComments from '../../components/RequestComments'
 
 const TECH_NEXT = {
-  'Scheduled':           'On-going',
-  'On-going':            'Site work completed',
-  'Site work completed': 'Report submitted',
+  'NDT scheduled':      'NDT in progress',
+  'NDT in progress':    'Draft report submitted',
+  'Draft report accepted': 'Final report submitted',
 }
 
 export default function TechJobs() {
@@ -42,8 +42,8 @@ export default function TechJobs() {
       .eq('tech_id', uid)
       .order('scheduled_date')
     const all = data || []
-    setActive(all.filter(r => ['Scheduled','On-going','Site work completed'].includes(r.status)))
-    setHistory(all.filter(r => ['Report submitted','Report accepted'].includes(r.status)))
+    setActive(all.filter(r => ['NDT scheduled','NDT in progress','Draft report submitted','Draft report accepted'].includes(r.status)))
+    setHistory(all.filter(r => ['Final report submitted','Reinstatement in progress','Closed'].includes(r.status)))
   }
 
   async function openDetail(r) {
@@ -60,7 +60,7 @@ export default function TechJobs() {
     setSaving(id)
     await supabase.from('requests').update({ status: newStatus }).eq('id', id)
     // Send email notification when draft report submitted
-    if (newStatus === 'Draft Report Submitted') {
+    if (newStatus === 'Draft report submitted') {
       const job = [...active, ...history].find(r => r.id === id)
       if (job) {
         // Get client email
@@ -259,7 +259,7 @@ export default function TechJobs() {
                     setDocs(data || [])
                   }}
                 />
-                <p className="text-xs text-gray-400 mt-2">After uploading, mark status as "Report submitted"</p>
+                <p className="text-xs text-gray-400 mt-2">After uploading, mark status as "Draft report submitted"</p>
               </div>
             </div>
           </div>
