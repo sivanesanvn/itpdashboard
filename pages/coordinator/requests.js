@@ -1,18 +1,11 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/router'
-import { supabase, NDT_STATUSES, JOB_CATEGORIES } from '../../lib/supabase'
+import { supabase, NDT_STATUSES, JOB_CATEGORIES, NDT_METHODS } from '../../lib/supabase'
 import Layout from '../../components/Layout'
 import { StatusBadge, NDTTimeline } from '../../components/StatusBadge'
 import DocumentUpload from '../../components/DocumentUpload'
 import PrintRequest from '../../components/PrintRequest'
 import RequestComments from '../../components/RequestComments'
-
-const MANAGER_NAV = (badge) => [
-  { href: '/manager/dashboard', label: 'Dashboard',    icon: '📊', badge },
-  { href: '/manager/requests',  label: 'All Requests', icon: '📋' },
-  { href: '/manager/schedule',  label: 'Schedule',     icon: '📅' },
-  { href: '/manager/team',      label: 'Team',         icon: '👥' },
-]
 
 const EMPTY_COL = { status: '', method: '', equipment: '', location: '', category: '', requestedBy: '' }
 
@@ -28,7 +21,6 @@ function SearchSelect({ value, onChange, options, placeholder = 'All' }) {
   }, [])
 
   const filtered = options.filter(o => o.toLowerCase().includes(query.toLowerCase()))
-  const display  = value || placeholder
 
   function select(v) { onChange(v); setQuery(''); setOpen(false) }
 
@@ -36,7 +28,7 @@ function SearchSelect({ value, onChange, options, placeholder = 'All' }) {
     <div ref={ref} className="relative w-full">
       <button type="button" onClick={() => { setOpen(o => !o); setQuery('') }}
         className={`w-full text-left text-xs border rounded px-1.5 py-1 bg-white flex items-center justify-between gap-1 focus:outline-none focus:ring-1 focus:ring-blue-300 ${value ? 'border-blue-400 text-blue-700 font-medium' : 'border-gray-200 text-gray-500'}`}>
-        <span className="truncate">{display}</span>
+        <span className="truncate">{value || placeholder}</span>
         <span className="text-gray-300 shrink-0">{open ? '▲' : '▼'}</span>
       </button>
       {open && (
@@ -64,17 +56,24 @@ function SearchSelect({ value, onChange, options, placeholder = 'All' }) {
   )
 }
 
-export default function ManagerRequests() {
+const NAV = (badge) => [
+  { href: '/coordinator/dashboard', label: 'Dashboard',    icon: '📊' },
+  { href: '/coordinator/requests',  label: 'All Requests', icon: '📋' },
+  { href: '/client/new',            label: 'New Request',  icon: '➕', badge },
+]
+
+export default function CoordinatorRequests() {
   const router = useRouter()
-  const [profile, setProfile] = useState(null)
-  const [requests, setRequests] = useState([])
-  const [search, setSearch]     = useState('')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo]     = useState('')
+  const [profile, setProfile]       = useState(null)
+  const [requests, setRequests]     = useState([])
+  const [search, setSearch]         = useState('')
   const [colFilters, setColFilters] = useState(EMPTY_COL)
-  const [selected, setSelected] = useState(null)
-  const [docs, setDocs]         = useState([])
-  const [printing, setPrinting] = useState(false)
+  const [dateFrom, setDateFrom]     = useState('')
+  const [dateTo, setDateTo]         = useState('')
+  const [selected, setSelected]     = useState(null)
+  const [docs, setDocs]             = useState([])
+  const [printing, setPrinting]     = useState(false)
+  const [acting, setActing]         = useState(false)
 
   useEffect(() => { init() }, [])
 
@@ -82,7 +81,7 @@ export default function ManagerRequests() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/'); return }
     const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-    if (!p || p.role !== 'manager') { router.push('/'); return }
+    if (!p || p.role !== 'coordinator') { router.push('/'); return }
     setProfile(p)
     await load()
   }
@@ -95,51 +94,51 @@ export default function ManagerRequests() {
     setRequests(data || [])
   }
 
-  async function loadDocs(requestId) {
-    const { data } = await supabase
-      .from('request_documents')
-      .select('*')
-      .eq('request_id', requestId)
-      .order('created_at', { ascending: false })
+  async function openRequest(r) {
+    setSelected(r)
+    const { data } = await supabase.from('request_documents').select('*')
+      .eq('request_id', r.id).order('created_at', { ascending: false })
     setDocs(data || [])
   }
 
-  async function openRequest(r) {
-    setSelected(r)
-    await loadDocs(r.id)
+  async function reloadDocs() {
+    if (!selected) return
+    const { data } = await supabase.from('request_documents').select('*')
+      .eq('request_id', selected.id).order('created_at', { ascending: false })
+    setDocs(data || [])
   }
 
-  async function updateStatus(id, status) {
-    await supabase.from('requests').update({ status }).eq('id', id)
-    await load()
-    setSelected(prev => prev ? { ...prev, status } : null)
+  async function updateStatus(newStatus) {
+    setActing(true)
+    await supabase.from('requests').update({ status: newStatus }).eq('id', selected.id)
+    setSelected(prev => ({ ...prev, status: newStatus }))
+    setRequests(prev => prev.map(r => r.id === selected.id ? { ...r, status: newStatus } : r))
+    setActing(false)
   }
 
   const setCol = (key, val) => setColFilters(prev => ({ ...prev, [key]: val }))
   const hasColFilters = Object.values(colFilters).some(Boolean)
-
   const uniqueVals = (key) => [...new Set(requests.map(r => r[key]).filter(Boolean))].sort()
 
   const filtered = requests.filter(r => {
-    const matchSearch   = !search || [r.request_no, r.company, r.location, r.ndt_method, r.requested_by_name, r.equipment_no]
+    const matchSearch = !search || [r.request_no, r.company, r.location, r.ndt_method, r.requested_by_name, r.equipment_no]
       .filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase())
-    const matchFrom     = !dateFrom || r.created_at?.slice(0,10) >= dateFrom
-    const matchTo       = !dateTo   || r.created_at?.slice(0,10) <= dateTo
-    const matchStatus   = !colFilters.status   || r.status === colFilters.status
-    const matchMethod   = !colFilters.method   || r.ndt_method === colFilters.method
-    const matchEquip    = !colFilters.equipment || (r.equipment_no || '').toLowerCase().includes(colFilters.equipment.toLowerCase())
-    const matchLoc      = !colFilters.location  || (r.location || '').toLowerCase().includes(colFilters.location.toLowerCase())
-    const matchCat      = !colFilters.category  || r.job_category === colFilters.category
-    const matchBy       = !colFilters.requestedBy || r.requested_by_name === colFilters.requestedBy
+    const matchFrom   = !dateFrom || r.created_at?.slice(0,10) >= dateFrom
+    const matchTo     = !dateTo   || r.created_at?.slice(0,10) <= dateTo
+    const matchStatus = !colFilters.status   || r.status === colFilters.status
+    const matchMethod = !colFilters.method   || r.ndt_method === colFilters.method
+    const matchEquip  = !colFilters.equipment || (r.equipment_no || '').toLowerCase().includes(colFilters.equipment.toLowerCase())
+    const matchLoc    = !colFilters.location  || (r.location || '').toLowerCase().includes(colFilters.location.toLowerCase())
+    const matchCat    = !colFilters.category  || r.job_category === colFilters.category
+    const matchBy     = !colFilters.requestedBy || r.requested_by_name === colFilters.requestedBy
     return matchSearch && matchFrom && matchTo && matchStatus && matchMethod && matchEquip && matchLoc && matchCat && matchBy
   })
 
-  const newCount = requests.filter(r => r.status === 'New request').length
+  const awaitingReview = requests.filter(r => r.status === 'Draft report submitted').length
 
   return (
-    <Layout profile={profile} nav={MANAGER_NAV(newCount)}>
-
-      {/* ── Page header + filters ── */}
+    <Layout profile={profile} nav={NAV(awaitingReview)}>
+      {/* Header + filters */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h1 className="text-xl font-bold">All Requests <span className="text-sm font-normal text-gray-400">({filtered.length})</span></h1>
         <div className="flex gap-2 flex-wrap items-center">
@@ -157,7 +156,7 @@ export default function ManagerRequests() {
         </div>
       </div>
 
-      {/* ── Table ── */}
+      {/* Table */}
       <div className="bg-white border border-gray-100 rounded-xl overflow-x-auto">
         <table className="min-w-full text-xs">
           <thead>
@@ -230,7 +229,7 @@ export default function ManagerRequests() {
         )}
       </div>
 
-      {/* ── Detail drawer ── */}
+      {/* Detail drawer */}
       {selected && profile && (
         <div className="fixed inset-0 bg-black/40 z-50 flex justify-end" onClick={() => setSelected(null)}>
           <div className="bg-white w-full max-w-lg h-full overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -246,19 +245,48 @@ export default function ManagerRequests() {
             </div>
 
             <div className="p-5 space-y-4">
-              <div className="card">
-                <NDTTimeline status={selected.status} />
-                <label className="label mt-3">Update status</label>
-                <select className="input" value={selected.status}
-                  onChange={e => updateStatus(selected.id, e.target.value)}>
-                  {NDT_STATUSES.map(s => <option key={s}>{s}</option>)}
-                </select>
-              </div>
+              <div className="card"><NDTTimeline status={selected.status} /></div>
+
+              {selected.status === 'Draft report submitted' && (
+                <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+                  <div className="text-sm font-semibold text-indigo-800 mb-1">📋 Draft report ready for review</div>
+                  <p className="text-xs text-indigo-600 mb-3">Download the report below. If satisfied, click Accept. If revisions are needed, click Reject.</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => updateStatus('Draft report accepted')} disabled={acting}
+                      className="btn btn-success flex-1 justify-center text-xs">
+                      {acting ? 'Updating…' : '✅ Accept draft report'}
+                    </button>
+                    <button onClick={() => updateStatus('NDT in progress')} disabled={acting}
+                      className="btn btn-danger flex-1 justify-center text-xs">
+                      {acting ? 'Updating…' : '✗ Reject — request revision'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {selected.status === 'Draft report accepted' && (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-800">
+                  ✅ Draft report accepted — Cutech NDT team will issue the final report.
+                </div>
+              )}
+
+              {selected.status === 'Final report submitted' && (
+                <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 text-xs text-sky-800">
+                  📄 Final report submitted — available for download below.
+                </div>
+              )}
+
+              {selected.status === 'Closed' && (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-800">
+                  ✅ Request closed — all work complete.
+                </div>
+              )}
 
               <div className="card text-sm space-y-1.5">
                 <div className="section-title">Site & scope</div>
                 {[
                   ['Requested by', selected.requested_by_name],
+                  ['Company',      selected.company],
                   ['Category',     selected.job_category],
                   ['Location',     selected.location],
                   ['Equipment',    selected.equipment_no],
@@ -314,13 +342,15 @@ export default function ManagerRequests() {
 
               <div className="card">
                 <DocumentUpload requestId={selected.id} profile={profile} fileType="document"
-                  label="Supporting documents" existingDocs={docs} onUploaded={() => loadDocs(selected.id)} />
+                  label="Supporting documents" existingDocs={docs} onUploaded={reloadDocs} />
               </div>
 
-              <div className="card">
-                <DocumentUpload requestId={selected.id} profile={profile} fileType="report"
-                  label="NDT Report" existingDocs={docs} onUploaded={() => loadDocs(selected.id)} />
-              </div>
+              {['Draft report submitted','Draft report accepted','Final report submitted','Reinstatement in progress','Closed'].includes(selected.status) && (
+                <div className="card">
+                  <DocumentUpload requestId={selected.id} profile={profile} fileType="report"
+                    label="NDT Report" existingDocs={docs} onUploaded={reloadDocs} />
+                </div>
+              )}
 
               {selected.scheduled_date && (
                 <div className="card text-sm space-y-1.5">
@@ -339,17 +369,6 @@ export default function ManagerRequests() {
               )}
 
               <RequestComments requestId={selected.id} profile={profile} />
-
-              {!['Closed','Cancelled'].includes(selected.status) && (
-                <button onClick={async () => {
-                  if (!confirm('Cancel request ' + selected.request_no + '?')) return
-                  await supabase.from('requests').update({ status: 'Cancelled' }).eq('id', selected.id)
-                  await load()
-                  setSelected(prev => ({...prev, status: 'Cancelled'}))
-                }} className="w-full text-xs text-red-500 border border-red-200 rounded-lg py-2 hover:bg-red-50">
-                  ✕ Cancel this request
-                </button>
-              )}
 
               {selected.status_history?.length > 0 && (
                 <div className="card">
