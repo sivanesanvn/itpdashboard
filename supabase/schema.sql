@@ -11,12 +11,14 @@ create extension if not exists "uuid-ossp";
 -- ============================================================
 create table public.profiles (
   id          uuid references auth.users(id) on delete cascade primary key,
-  role        text not null check (role in ('manager','client','tech','scaffold','insulation','painting')),
+  role        text not null check (role in ('manager','coordinator','client','tech','scaffold','insulation','painting')),
   full_name   text not null,
   company     text,
   phone       text,
   email       text,
   cert        text,
+  position    text,
+  department  text,
   available   boolean default true,
   created_at  timestamptz default now()
 );

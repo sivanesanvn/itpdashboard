@@ -172,18 +172,19 @@ export default function ClientNew() {
             {/* Requested by */}
             <div className="card mb-4">
               <div className="section-title">👤 Requested by</div>
+              <div className="text-xs text-gray-400 mb-3 flex items-center gap-1.5">
+                <span>🔒</span> These details are managed by your NDT portal administrator. Contact them to make changes.
+              </div>
               <div className="grid grid-cols-3 gap-3 mb-3">
                 <div>
-                  <label className="label">Name *</label>
-                  <input className="input" placeholder="Your full name"
-                    value={s1.requester_name}
-                    onChange={e => setS1(p => ({...p, requester_name: e.target.value}))} />
+                  <label className="label">Name</label>
+                  <input className="input bg-gray-50 text-gray-600 cursor-not-allowed"
+                    value={s1.requester_name} readOnly />
                 </div>
                 <div>
-                  <label className="label">Company *</label>
-                  <input className="input" placeholder="Your company name"
-                    value={s1.requester_company}
-                    onChange={e => setS1(p => ({...p, requester_company: e.target.value}))} />
+                  <label className="label">Company</label>
+                  <input className="input bg-gray-50 text-gray-600 cursor-not-allowed"
+                    value={s1.requester_company} readOnly />
                 </div>
                 <div>
                   <label className="label flex items-center justify-between">
@@ -196,15 +197,13 @@ export default function ClientNew() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="label">Designation / position</label>
-                  <input className="input" placeholder="e.g. Inspection Engineer"
-                    value={s1.requester_position}
-                    onChange={e => setS1(p => ({...p, requester_position: e.target.value}))} />
+                  <input className="input bg-gray-50 text-gray-600 cursor-not-allowed"
+                    value={s1.requester_position} readOnly />
                 </div>
                 <div>
                   <label className="label">Department</label>
-                  <input className="input" placeholder="e.g. Maintenance, Operations"
-                    value={s1.requester_department}
-                    onChange={e => setS1(p => ({...p, requester_department: e.target.value}))} />
+                  <input className="input bg-gray-50 text-gray-600 cursor-not-allowed"
+                    value={s1.requester_department} readOnly />
                 </div>
               </div>
             </div>

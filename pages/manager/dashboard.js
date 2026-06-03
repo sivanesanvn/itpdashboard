@@ -94,9 +94,10 @@ export default function ManagerDashboard() {
   const doneCount   = periodRequests.filter(r => ['Draft report submitted','Draft report accepted','Final report submitted','Reinstatement in progress','Closed'].includes(r.status)).length
 
   const nav = [
-    { href: '/manager/dashboard', label: 'Dashboard', icon: '📊', badge: newBadge },
+    { href: '/manager/dashboard', label: 'Dashboard',    icon: '📊', badge: newBadge },
     { href: '/manager/requests',  label: 'All Requests', icon: '📋' },
-    { href: '/manager/schedule',  label: 'Schedule', icon: '📅' },
+    { href: '/manager/schedule',  label: 'Schedule',     icon: '📅' },
+    { href: '/manager/team',      label: 'Team',         icon: '👥' },
   ]
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Loading…</div>

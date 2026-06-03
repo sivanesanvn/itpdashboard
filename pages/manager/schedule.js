@@ -10,9 +10,10 @@ import {
 } from 'date-fns'
 
 const NAV = (b) => [
-  { href: '/manager/dashboard', label: 'Dashboard', icon: '📊', badge: b },
+  { href: '/manager/dashboard', label: 'Dashboard',    icon: '📊', badge: b },
   { href: '/manager/requests',  label: 'All Requests', icon: '📋' },
-  { href: '/manager/schedule',  label: 'Schedule', icon: '📅' },
+  { href: '/manager/schedule',  label: 'Schedule',     icon: '📅' },
+  { href: '/manager/team',      label: 'Team',         icon: '👥' },
 ]
 
 const WEEK_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
