@@ -64,152 +64,141 @@ export default function ClientDashboard() {
         </div>
       </div>
 
-      {requests.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="text-5xl mb-4">🔍</div>
-          <h2 className="text-lg font-semibold text-gray-700 mb-1">No requests yet</h2>
-          <p className="text-sm text-gray-400 mb-6">Submit your first NDT inspection request to get started.</p>
-          <button onClick={() => router.push('/client/new')} className="btn btn-primary px-6">
-            + New Request
-          </button>
-        </div>
-      ) : (<>
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-2 mb-4">
-          {[
-            { label: 'Total',           value: periodRequests.length,       color: '' },
-            { label: 'Active',          value: periodRequests.filter(r => ACTIVE_STATUSES.includes(r.status)).length, color: 'text-blue-700' },
-            { label: 'Awaiting review', value: awaitingReview.length, color: awaitingReview.length > 0 ? 'text-indigo-600' : '' },
-            { label: 'Overdue',         value: overdue.length,        color: overdue.length > 0 ? 'text-red-600' : 'text-gray-400' },
-          ].map(s => (
-            <div key={s.label} className="bg-white border border-gray-100 rounded-xl p-3 text-center">
-              <div className={`text-2xl font-semibold ${s.color}`}>{s.value}</div>
-              <div className="text-xs text-gray-400 mt-0.5">{s.label}</div>
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-2 mb-4">
+        {[
+          { label: 'Total',           value: periodRequests.length,       color: '' },
+          { label: 'Active',          value: periodRequests.filter(r => ACTIVE_STATUSES.includes(r.status)).length, color: 'text-blue-700' },
+          { label: 'Awaiting review', value: awaitingReview.length, color: awaitingReview.length > 0 ? 'text-indigo-600' : '' },
+          { label: 'Overdue',         value: overdue.length,        color: overdue.length > 0 ? 'text-red-600' : 'text-gray-400' },
+        ].map(s => (
+          <div key={s.label} className="bg-white border border-gray-100 rounded-xl p-3 text-center">
+            <div className={`text-2xl font-semibold ${s.color}`}>{s.value}</div>
+            <div className="text-xs text-gray-400 mt-0.5">{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Awaiting review alert */}
+      {awaitingReview.length > 0 && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 mb-4">
+          <div className="text-xs font-semibold text-indigo-700 mb-2">📋 Reports waiting for your review</div>
+          {awaitingReview.map(r => (
+            <div key={r.id} className="flex items-center gap-2 py-1.5 cursor-pointer hover:opacity-80"
+              onClick={() => router.push('/client/all-requests')}>
+              <span className="text-xs font-bold text-indigo-700">{r.request_no}</span>
+              <span className="text-xs text-indigo-600">{r.ndt_method}</span>
+              <span className="badge bg-indigo-100 text-indigo-700 text-xs ml-auto">Review now →</span>
             </div>
           ))}
         </div>
+      )}
 
-        {/* Awaiting review alert */}
-        {awaitingReview.length > 0 && (
-          <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 mb-4">
-            <div className="text-xs font-semibold text-indigo-700 mb-2">📋 Reports waiting for your review</div>
-            {awaitingReview.map(r => (
-              <div key={r.id} className="flex items-center gap-2 py-1.5 cursor-pointer hover:opacity-80"
-                onClick={() => router.push('/client/all-requests')}>
-                <span className="text-xs font-bold text-indigo-700">{r.request_no}</span>
-                <span className="text-xs text-indigo-600">{r.ndt_method}</span>
-                <span className="badge bg-indigo-100 text-indigo-700 text-xs ml-auto">Review now →</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Charts row 1 */}
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          <div className="bg-white border border-gray-100 rounded-xl p-4">
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">By Status</div>
-            <div className="flex items-center gap-3">
-              <DonutChart size={110} data={[
-                { label: 'New',        value: periodRequests.filter(r => r.status === 'New request').length,      color: '#3b82f6' },
-                { label: 'Prep',       value: periodRequests.filter(r => ['Scaffold erection in progress','Insulation removal in progress','Ready for NDT'].includes(r.status)).length, color: '#f97316' },
-                { label: 'Active',     value: periodRequests.filter(r => ['NDT scheduled','NDT in progress'].includes(r.status)).length, color: '#f59e0b' },
-                { label: 'Reporting',  value: periodRequests.filter(r => ['Draft report submitted','Draft report accepted'].includes(r.status)).length, color: '#6366f1' },
-                { label: 'Finalising', value: periodRequests.filter(r => ['Final report submitted','Reinstatement in progress'].includes(r.status)).length, color: '#0ea5e9' },
-                { label: 'Closed',     value: periodRequests.filter(r => r.status === 'Closed').length,           color: '#10b981' },
-                { label: 'Cancelled',  value: periodRequests.filter(r => r.status === 'Cancelled').length,        color: '#ef4444' },
-              ]} />
-              <div className="flex flex-col gap-1 text-xs">
-                {[
-                  { label: 'New',        color: '#3b82f6', value: periodRequests.filter(r => r.status === 'New request').length },
-                  { label: 'Prep',       color: '#f97316', value: periodRequests.filter(r => ['Scaffold erection in progress','Insulation removal in progress','Ready for NDT'].includes(r.status)).length },
-                  { label: 'Active',     color: '#f59e0b', value: periodRequests.filter(r => ['NDT scheduled','NDT in progress'].includes(r.status)).length },
-                  { label: 'Reporting',  color: '#6366f1', value: periodRequests.filter(r => ['Draft report submitted','Draft report accepted'].includes(r.status)).length },
-                  { label: 'Finalising', color: '#0ea5e9', value: periodRequests.filter(r => ['Final report submitted','Reinstatement in progress'].includes(r.status)).length },
-                  { label: 'Closed',     color: '#10b981', value: periodRequests.filter(r => r.status === 'Closed').length },
-                  { label: 'Cancelled',  color: '#ef4444', value: periodRequests.filter(r => r.status === 'Cancelled').length },
-                ].map(l => (
-                  <div key={l.label} className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{background: l.color}} />
-                    <span className="text-gray-500">{l.label}</span>
-                    <span className="font-semibold ml-auto pl-2">{l.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="bg-white border border-gray-100 rounded-xl p-4">
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">By Category</div>
-            <div className="flex items-center gap-3">
-              <DonutChart size={110} data={[
-                { label: 'Meridium',    value: periodRequests.filter(r => r.job_category === 'Meridium').length,    color: '#185FA5' },
-                { label: 'Turn Around', value: periodRequests.filter(r => r.job_category === 'Turn Around').length, color: '#1D9E75' },
-                { label: 'Ad-Hoc',      value: periodRequests.filter(r => r.job_category === 'Ad-Hoc').length,      color: '#f59e0b' },
-              ]} />
-              <div className="flex flex-col gap-1 text-xs">
-                {[
-                  { label: 'Meridium',    color: '#185FA5', value: periodRequests.filter(r => r.job_category === 'Meridium').length },
-                  { label: 'Turn Around', color: '#1D9E75', value: periodRequests.filter(r => r.job_category === 'Turn Around').length },
-                  { label: 'Ad-Hoc',      color: '#f59e0b', value: periodRequests.filter(r => r.job_category === 'Ad-Hoc').length },
-                ].map(l => (
-                  <div key={l.label} className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{background: l.color}} />
-                    <span className="text-gray-500">{l.label}</span>
-                    <span className="font-semibold ml-auto pl-2">{l.value}</span>
-                  </div>
-                ))}
-              </div>
+      {/* Charts row 1 */}
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="bg-white border border-gray-100 rounded-xl p-4">
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">By Status</div>
+          <div className="flex items-center gap-3">
+            <DonutChart size={110} data={[
+              { label: 'New',        value: periodRequests.filter(r => r.status === 'New request').length,      color: '#3b82f6' },
+              { label: 'Prep',       value: periodRequests.filter(r => ['Scaffold erection in progress','Insulation removal in progress','Ready for NDT'].includes(r.status)).length, color: '#f97316' },
+              { label: 'Active',     value: periodRequests.filter(r => ['NDT scheduled','NDT in progress'].includes(r.status)).length, color: '#f59e0b' },
+              { label: 'Reporting',  value: periodRequests.filter(r => ['Draft report submitted','Draft report accepted'].includes(r.status)).length, color: '#6366f1' },
+              { label: 'Finalising', value: periodRequests.filter(r => ['Final report submitted','Reinstatement in progress'].includes(r.status)).length, color: '#0ea5e9' },
+              { label: 'Closed',     value: periodRequests.filter(r => r.status === 'Closed').length,           color: '#10b981' },
+              { label: 'Cancelled',  value: periodRequests.filter(r => r.status === 'Cancelled').length,        color: '#ef4444' },
+            ]} />
+            <div className="flex flex-col gap-1 text-xs">
+              {[
+                { label: 'New',        color: '#3b82f6', value: periodRequests.filter(r => r.status === 'New request').length },
+                { label: 'Prep',       color: '#f97316', value: periodRequests.filter(r => ['Scaffold erection in progress','Insulation removal in progress','Ready for NDT'].includes(r.status)).length },
+                { label: 'Active',     color: '#f59e0b', value: periodRequests.filter(r => ['NDT scheduled','NDT in progress'].includes(r.status)).length },
+                { label: 'Reporting',  color: '#6366f1', value: periodRequests.filter(r => ['Draft report submitted','Draft report accepted'].includes(r.status)).length },
+                { label: 'Finalising', color: '#0ea5e9', value: periodRequests.filter(r => ['Final report submitted','Reinstatement in progress'].includes(r.status)).length },
+                { label: 'Closed',     color: '#10b981', value: periodRequests.filter(r => r.status === 'Closed').length },
+                { label: 'Cancelled',  color: '#ef4444', value: periodRequests.filter(r => r.status === 'Cancelled').length },
+              ].map(l => (
+                <div key={l.label} className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{background: l.color}} />
+                  <span className="text-gray-500">{l.label}</span>
+                  <span className="font-semibold ml-auto pl-2">{l.value}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-
-        {/* Charts row 2 — NDT Method */}
-        <div className="bg-white border border-gray-100 rounded-xl p-4 mb-4">
-          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">By NDT Method</div>
-          <div className="flex items-center gap-4">
-            <DonutChart size={110} data={
-              NDT_METHODS.map((m, i) => ({
-                label: m,
-                value: periodRequests.filter(r => r.ndt_method === m).length,
-                color: `hsl(${(i * 360 / NDT_METHODS.length)},60%,48%)`,
-              }))
-            } />
-            <div className="flex flex-col gap-1 text-xs overflow-y-auto max-h-28">
-              {NDT_METHODS.map((m, i) => {
-                const count = periodRequests.filter(r => r.ndt_method === m).length
-                if (!count) return null
-                return (
-                  <div key={m} className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ background: `hsl(${(i * 360 / NDT_METHODS.length)},60%,48%)` }} />
-                    <span className="text-gray-500">{m}</span>
-                    <span className="font-semibold ml-auto pl-2">{count}</span>
-                  </div>
-                )
-              })}
+        <div className="bg-white border border-gray-100 rounded-xl p-4">
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">By Category</div>
+          <div className="flex items-center gap-3">
+            <DonutChart size={110} data={[
+              { label: 'Meridium',    value: periodRequests.filter(r => r.job_category === 'Meridium').length,    color: '#185FA5' },
+              { label: 'Turn Around', value: periodRequests.filter(r => r.job_category === 'Turn Around').length, color: '#1D9E75' },
+              { label: 'Ad-Hoc',      value: periodRequests.filter(r => r.job_category === 'Ad-Hoc').length,      color: '#f59e0b' },
+            ]} />
+            <div className="flex flex-col gap-1 text-xs">
+              {[
+                { label: 'Meridium',    color: '#185FA5', value: periodRequests.filter(r => r.job_category === 'Meridium').length },
+                { label: 'Turn Around', color: '#1D9E75', value: periodRequests.filter(r => r.job_category === 'Turn Around').length },
+                { label: 'Ad-Hoc',      color: '#f59e0b', value: periodRequests.filter(r => r.job_category === 'Ad-Hoc').length },
+              ].map(l => (
+                <div key={l.label} className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{background: l.color}} />
+                  <span className="text-gray-500">{l.label}</span>
+                  <span className="font-semibold ml-auto pl-2">{l.value}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Overdue alert */}
-        {overdue.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
-            <div className="text-xs font-semibold text-red-700 mb-2">⚠ Overdue</div>
-            {overdue.map(r => (
-              <div key={r.id} className="flex items-center gap-2 py-1 cursor-pointer"
-                onClick={() => router.push('/client/all-requests')}>
-                <span className="text-xs font-bold text-red-700">{r.request_no}</span>
-                <span className="text-xs text-red-600">{r.ndt_method}</span>
-                <span className="ml-auto text-xs text-red-500">Due: {r.date_needed}</span>
-              </div>
-            ))}
+      {/* Charts row 2 — NDT Method */}
+      <div className="bg-white border border-gray-100 rounded-xl p-4 mb-4">
+        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">By NDT Method</div>
+        <div className="flex items-center gap-4">
+          <DonutChart size={110} data={
+            NDT_METHODS.map((m, i) => ({
+              label: m,
+              value: periodRequests.filter(r => r.ndt_method === m).length,
+              color: `hsl(${(i * 360 / NDT_METHODS.length)},60%,48%)`,
+            }))
+          } />
+          <div className="flex flex-col gap-1 text-xs overflow-y-auto max-h-28">
+            {NDT_METHODS.map((m, i) => {
+              const count = periodRequests.filter(r => r.ndt_method === m).length
+              if (!count) return null
+              return (
+                <div key={m} className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ background: `hsl(${(i * 360 / NDT_METHODS.length)},60%,48%)` }} />
+                  <span className="text-gray-500">{m}</span>
+                  <span className="font-semibold ml-auto pl-2">{count}</span>
+                </div>
+              )
+            })}
           </div>
-        )}
+        </div>
+      </div>
 
-        <button onClick={() => router.push('/client/all-requests')}
-          className="w-full text-center text-sm text-blue-600 py-2">
-          View all requests →
-        </button>
-      </>)}
+      {/* Overdue alert */}
+      {overdue.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
+          <div className="text-xs font-semibold text-red-700 mb-2">⚠ Overdue</div>
+          {overdue.map(r => (
+            <div key={r.id} className="flex items-center gap-2 py-1 cursor-pointer"
+              onClick={() => router.push('/client/all-requests')}>
+              <span className="text-xs font-bold text-red-700">{r.request_no}</span>
+              <span className="text-xs text-red-600">{r.ndt_method}</span>
+              <span className="ml-auto text-xs text-red-500">Due: {r.date_needed}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <button onClick={() => router.push('/client/all-requests')}
+        className="w-full text-center text-sm text-blue-600 py-2">
+        View all requests →
+      </button>
     </Layout>
   )
 }
