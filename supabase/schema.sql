@@ -98,11 +98,21 @@ alter table public.requests enable row level security;
 
 create or replace function public.set_request_no()
 returns trigger language plpgsql as $$
-declare next_num int;
+declare
+  yy       text;
+  next_num int;
 begin
-  select coalesce(max(cast(substring(request_no from 5) as int)),0)+1
-    into next_num from public.requests;
-  new.request_no := 'NDT-' || lpad(next_num::text, 3, '0');
+  yy := to_char(now(), 'YY');
+
+  -- Global sequence: extract the numeric part from ALL requests regardless of year prefix
+  select coalesce(
+    max(cast(substring(request_no from 4) as int)), 0
+  ) + 1
+  into next_num
+  from public.requests
+  where request_no ~ '^\d{2}-\d+$';
+
+  new.request_no := yy || '-' || lpad(next_num::text, 5, '0');
   return new;
 end;
 $$;
