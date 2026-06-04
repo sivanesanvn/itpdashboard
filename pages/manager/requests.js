@@ -319,7 +319,7 @@ export default function ManagerRequests() {
 
               <div className="card">
                 <DocumentUpload requestId={selected.id} profile={profile} fileType="report"
-                  label="NDT Report" existingDocs={docs} onUploaded={() => loadDocs(selected.id)} />
+                  label="NDT Report" existingDocs={docs} notifyOnUpload={true} onUploaded={() => loadDocs(selected.id)} />
               </div>
 
               {selected.scheduled_date && (

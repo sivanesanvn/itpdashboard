@@ -348,7 +348,7 @@ export default function CoordinatorRequests() {
               {['Draft report submitted','Draft report accepted','Final report submitted','Reinstatement in progress','Closed'].includes(selected.status) && (
                 <div className="card">
                   <DocumentUpload requestId={selected.id} profile={profile} fileType="report"
-                    label="NDT Report" existingDocs={docs} onUploaded={reloadDocs} />
+                    label="NDT Report" existingDocs={docs} notifyOnUpload={true} onUploaded={reloadDocs} />
                 </div>
               )}
 

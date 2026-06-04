@@ -24,7 +24,7 @@ function fileSize(bytes) {
   return (bytes / 1048576).toFixed(1) + ' MB'
 }
 
-export default function DocumentUpload({ requestId, profile, fileType = 'document', label = 'Supporting documents', existingDocs = [], onUploaded }) {
+export default function DocumentUpload({ requestId, profile, fileType = 'document', label = 'Supporting documents', existingDocs = [], onUploaded, notifyOnUpload = false }) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const inputRef = useRef()
@@ -55,6 +55,13 @@ export default function DocumentUpload({ requestId, profile, fileType = 'documen
     }
     setUploading(false)
     if (inputRef.current) inputRef.current.value = ''
+    if (fileType === 'report' && notifyOnUpload) {
+      fetch('/api/notify-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId }),
+      }).catch(e => console.warn('Report notification failed:', e))
+    }
     if (onUploaded) onUploaded()
   }
 
