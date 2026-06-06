@@ -326,10 +326,14 @@ function ScheduleModal({ request, techs, contractors, onConfirm, onClose }) {
   const [insulation, setInsulation] = useState({ enabled: request.needs_insulation, contractorId: '', contractorName: '' })
   const [painting, setPainting]     = useState({ enabled: request.needs_painting, contractorId: '', contractorName: '' })
 
-  // Match typed name to a profile id if possible
   function findTechId(name) {
     const match = techs.find(t => t.full_name.toLowerCase() === name.toLowerCase())
     return match ? match.id : null
+  }
+
+  function pickContractor(name, setter) {
+    const match = contractors.find(c => c.full_name.toLowerCase() === name.toLowerCase())
+    setter(p => ({ ...p, contractorId: match ? match.id : null, contractorName: name }))
   }
 
   async function submit() {
