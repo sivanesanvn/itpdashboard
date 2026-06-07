@@ -62,6 +62,7 @@ const NAV = [
   { href: '/client/requests',     label: 'Dashboard',    icon: '📊' },
   { href: '/client/all-requests', label: 'All Requests', icon: '📋' },
   { href: '/client/new',          label: 'New Request',  icon: '➕' },
+  { href: '/client/bulk',         label: 'Bulk Upload',  icon: '📤' },
 ]
 
 export default function ClientAllRequests() {
