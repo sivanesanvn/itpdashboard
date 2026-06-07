@@ -17,160 +17,216 @@ const COORDINATOR_NAV = [
   { href: '/client/bulk',           label: 'Bulk Upload',  icon: '📤' },
 ]
 
+const PRIORITIES = ['Normal', 'Urgent', 'Shutdown / turnaround']
+const YES_NO     = ['Yes', 'No']
+
+// Columns in the data sheet (no technical fields)
 const COLUMNS = [
-  { key: 'location',            label: 'Location *',                   required: true,  hint: 'e.g. Tuas Shipyard, Berth 7' },
-  { key: 'ndt_method',          label: 'NDT Method *',                 required: true,  hint: NDT_METHODS.join(' | ') },
-  { key: 'date_needed',         label: 'Date Needed * (YYYY-MM-DD)',   required: true,  hint: 'e.g. 2026-07-15' },
-  { key: 'job_category',        label: 'Job Category',                 required: false, hint: JOB_CATEGORIES.join(' | ') },
-  { key: 'equipment_no',        label: 'Equipment / Piping No.',       required: false, hint: 'e.g. V-1201' },
-  { key: 'contact_name',        label: 'Site Contact Name',            required: false, hint: '' },
-  { key: 'contact_phone',       label: 'Site Contact Phone',           required: false, hint: 'e.g. +65 9xxx xxxx' },
-  { key: 'scope_qty',           label: 'Estimated Quantity',           required: false, hint: 'e.g. 50 weld joints' },
-  { key: 'description',         label: 'Description of Scope',        required: false, hint: '' },
-  { key: 'priority',            label: 'Priority',                     required: false, hint: 'Normal | Urgent | Shutdown / turnaround' },
-  { key: 'high_temp',           label: 'High Temp (TRUE/FALSE)',       required: false, hint: 'TRUE or FALSE' },
-  { key: 'needs_scaffold',      label: 'Needs Scaffold (TRUE/FALSE)',  required: false, hint: 'TRUE or FALSE' },
-  { key: 'needs_insulation',    label: 'Needs Insulation (TRUE/FALSE)',required: false, hint: 'TRUE or FALSE' },
-  { key: 'needs_painting',      label: 'Needs Painting (TRUE/FALSE)',  required: false, hint: 'TRUE or FALSE' },
-  { key: 'material',            label: 'Material',                     required: false, hint: 'e.g. Carbon steel pipe' },
-  { key: 'thickness_mm',        label: 'Thickness (mm)',               required: false, hint: 'e.g. 12.7' },
-  { key: 'pipe_size',           label: 'Pipe / Vessel Size',           required: false, hint: 'e.g. 6" NB' },
-  { key: 'p_number',            label: 'P-Number / Material Spec',     required: false, hint: 'e.g. P1, ASTM A106 Gr.B' },
-  { key: 'code_standard',       label: 'Code / Standard',              required: false, hint: 'e.g. ASME B31.3' },
-  { key: 'acceptance',          label: 'Acceptance Criteria',          required: false, hint: 'e.g. No linear indications' },
-  { key: 'special_notes',       label: 'Special Notes',                required: false, hint: '' },
+  { key: 'location',       label: 'Location',                required: true  },
+  { key: 'ndt_method',     label: 'NDT Method',              required: true  },
+  { key: 'date_needed',    label: 'Date Needed (YYYY-MM-DD)', required: true  },
+  { key: 'job_category',   label: 'Job Category',            required: false },
+  { key: 'equipment_no',   label: 'Equipment / Piping No.',  required: false },
+  { key: 'contact_name',   label: 'Site Contact Name',       required: false },
+  { key: 'contact_phone',  label: 'Site Contact Phone',      required: false },
+  { key: 'scope_qty',      label: 'Estimated Quantity',      required: false },
+  { key: 'description',    label: 'Description of Scope',    required: false },
+  { key: 'priority',       label: 'Priority',                required: false },
+  { key: 'high_temp',      label: 'High Temperature Job',    required: false },
+  { key: 'needs_scaffold', label: 'Scaffold Required',       required: false },
+  { key: 'needs_insulation', label: 'Insulation Removal Required', required: false },
+  { key: 'needs_painting', label: 'Painting Required',       required: false },
+  { key: 'special_notes',  label: 'Special Notes / Safety',  required: false },
 ]
 
-const BOOL_KEYS = ['high_temp','needs_scaffold','needs_insulation','needs_painting']
-
-function parseBool(v) {
+function parseYesNo(v) {
   if (!v) return false
-  return v.toString().trim().toLowerCase() === 'true'
+  return v.toString().trim().toLowerCase() === 'yes'
 }
 
-function parseCSV(text) {
-  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
-  if (lines.length < 2) return []
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''))
-  const rows = []
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim()
-    if (!line) continue
-    // Handle quoted fields with commas inside
-    const fields = []
-    let cur = '', inQ = false
-    for (let c = 0; c < line.length; c++) {
-      if (line[c] === '"') { inQ = !inQ }
-      else if (line[c] === ',' && !inQ) { fields.push(cur); cur = '' }
-      else { cur += line[c] }
+async function downloadTemplate() {
+  const XLSX = (await import('xlsx')).default
+
+  // ── Dropdowns live in a hidden "Lists" sheet ──────────────────────────
+  const listData = [
+    ['NDT Methods', ...NDT_METHODS],
+    ['Job Category', ...JOB_CATEGORIES],
+    ['Priority', ...PRIORITIES],
+    ['Yes / No', ...YES_NO],
+  ]
+  const listsWs = XLSX.utils.aoa_to_sheet(listData)
+  // hide the lists sheet
+  listsWs['!sheetHide'] = true
+
+  // ── Data sheet ────────────────────────────────────────────────────────
+  const headers = COLUMNS.map(c => c.label)
+  const dataWs  = XLSX.utils.aoa_to_sheet([headers])
+
+  // Column widths
+  dataWs['!cols'] = COLUMNS.map(c => ({
+    wch: c.key === 'location' || c.key === 'description' || c.key === 'special_notes' ? 40 : 22,
+  }))
+
+  // Freeze header row
+  dataWs['!freeze'] = { xSplit: 0, ySplit: 1 }
+
+  // Style header row: white bold text on brand blue (#185FA5)
+  COLUMNS.forEach((_, ci) => {
+    const addr = XLSX.utils.encode_cell({ r: 0, c: ci })
+    if (!dataWs[addr]) return
+    dataWs[addr].s = {
+      font:      { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+      fill:      { fgColor: { rgb: '185FA5' }, patternType: 'solid' },
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      border: {
+        bottom: { style: 'thin', color: { rgb: 'FFFFFF' } },
+        right:  { style: 'thin', color: { rgb: 'FFFFFF' } },
+      },
     }
-    fields.push(cur)
-    const obj = {}
-    headers.forEach((h, idx) => { obj[h] = (fields[idx] || '').trim() })
-    rows.push(obj)
+  })
+
+  // Data-validation dropdowns for rows 2–201 (200 request rows)
+  const colIdx  = (key) => COLUMNS.findIndex(c => c.key === key)
+  const colLetter = (key) => XLSX.utils.encode_col(colIdx(key))
+
+  const ndtCol  = colLetter('ndt_method')
+  const catCol  = colLetter('job_category')
+  const priCol  = colLetter('priority')
+  const htCol   = colLetter('high_temp')
+  const scCol   = colLetter('needs_scaffold')
+  const insCol  = colLetter('needs_insulation')
+  const ptCol   = colLetter('needs_painting')
+
+  // Lists sheet ranges (row 1 = headers, data starts row 2)
+  const ndtRange  = `Lists!$B$1:$${XLSX.utils.encode_col(NDT_METHODS.length)}$1`
+  const catRange  = `Lists!$B$2:$${XLSX.utils.encode_col(JOB_CATEGORIES.length)}$2`
+  const priRange  = `Lists!$B$3:$${XLSX.utils.encode_col(PRIORITIES.length)}$3`
+  const ynRange   = `Lists!$B$4:$${XLSX.utils.encode_col(YES_NO.length)}$4`
+
+  dataWs['!dataValidation'] = [
+    { sqref: `${ndtCol}2:${ndtCol}201`, type: 'list', formula1: ndtRange,  showDropDown: false, showErrorMessage: true, errorTitle: 'Invalid', error: 'Select from the list.' },
+    { sqref: `${catCol}2:${catCol}201`, type: 'list', formula1: catRange,  showDropDown: false, showErrorMessage: true, errorTitle: 'Invalid', error: 'Select from the list.' },
+    { sqref: `${priCol}2:${priCol}201`, type: 'list', formula1: priRange,  showDropDown: false, showErrorMessage: true, errorTitle: 'Invalid', error: 'Select from the list.' },
+    { sqref: `${htCol}2:${htCol}201`,   type: 'list', formula1: ynRange,   showDropDown: false, showErrorMessage: true, errorTitle: 'Invalid', error: 'Select Yes or No.' },
+    { sqref: `${scCol}2:${scCol}201`,   type: 'list', formula1: ynRange,   showDropDown: false, showErrorMessage: true, errorTitle: 'Invalid', error: 'Select Yes or No.' },
+    { sqref: `${insCol}2:${insCol}201`, type: 'list', formula1: ynRange,   showDropDown: false, showErrorMessage: true, errorTitle: 'Invalid', error: 'Select Yes or No.' },
+    { sqref: `${ptCol}2:${ptCol}201`,   type: 'list', formula1: ynRange,   showDropDown: false, showErrorMessage: true, errorTitle: 'Invalid', error: 'Select Yes or No.' },
+  ]
+
+  // ── Guide sheet ───────────────────────────────────────────────────────
+  const guideRows = [
+    ['NDT Bulk Request Form — How to Fill'],
+    [],
+    ['STEP 1', 'Fill in the "Requests" sheet below. Each row = one NDT request.'],
+    ['STEP 2', 'Columns with a dropdown arrow show a list — click the cell and choose from the list.'],
+    ['STEP 3', 'Save the file and upload it on the NDT portal Bulk Upload page.'],
+    [],
+    ['Column', 'Required?', 'Notes'],
+    ...COLUMNS.map(c => [
+      c.label,
+      c.required ? 'YES *' : 'Optional',
+      c.key === 'ndt_method'     ? 'Choose from dropdown — ' + NDT_METHODS.join(', ') :
+      c.key === 'job_category'   ? 'Choose from dropdown — ' + JOB_CATEGORIES.join(', ') :
+      c.key === 'priority'       ? 'Choose from dropdown — Normal / Urgent / Shutdown / turnaround  (default: Normal)' :
+      c.key === 'high_temp'      ? 'Dropdown — Yes / No' :
+      c.key === 'needs_scaffold' ? 'Dropdown — Yes / No' :
+      c.key === 'needs_insulation' ? 'Dropdown — Yes / No' :
+      c.key === 'needs_painting' ? 'Dropdown — Yes / No' :
+      c.key === 'date_needed'    ? 'Format: YYYY-MM-DD  e.g. 2026-07-15' :
+      c.key === 'location'       ? 'e.g. Tuas Shipyard, Berth 7 / Unit 3' :
+      c.key === 'equipment_no'   ? 'e.g. V-1201, P-4401A' :
+      c.key === 'contact_phone'  ? 'e.g. +65 9123 4567' :
+      c.key === 'scope_qty'      ? 'e.g. 50 weld joints, 200 m²' :
+      '',
+    ]),
+    [],
+    ['* Rows missing required fields will be skipped during upload.'],
+  ]
+
+  const guideWs = XLSX.utils.aoa_to_sheet(guideRows)
+  guideWs['!cols'] = [{ wch: 30 }, { wch: 14 }, { wch: 70 }]
+
+  // Style guide header
+  guideWs['A1'].s = {
+    font: { bold: true, sz: 14, color: { rgb: '185FA5' } },
   }
-  return rows
+  // Style column header row (row index 6 = row 7)
+  ;['A7','B7','C7'].forEach(addr => {
+    if (!guideWs[addr]) return
+    guideWs[addr].s = {
+      font: { bold: true, color: { rgb: 'FFFFFF' } },
+      fill: { fgColor: { rgb: '185FA5' }, patternType: 'solid' },
+    }
+  })
+
+  // ── Assemble workbook ─────────────────────────────────────────────────
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, dataWs,  'Requests')
+  XLSX.utils.book_append_sheet(wb, guideWs, 'Guide')
+  XLSX.utils.book_append_sheet(wb, listsWs, 'Lists')
+
+  XLSX.writeFile(wb, 'NDT_Bulk_Request_Template.xlsx', { cellStyles: true })
 }
 
-function mapRow(row, profile, user) {
-  // Match header label or key
-  const get = (col) => {
-    const byKey   = row[col.key]   ?? ''
-    const byLabel = row[col.label] ?? ''
-    return (byKey || byLabel).trim()
+function parseXLSX(buffer) {
+  const XLSX = require('xlsx')
+  const wb   = XLSX.read(buffer, { type: 'buffer', cellDates: true })
+  const ws   = wb.Sheets['Requests']
+  if (!ws) throw new Error('No "Requests" sheet found in the uploaded file.')
+  const raw  = XLSX.utils.sheet_to_json(ws, { defval: '' })
+  return raw
+}
+
+function mapRow(raw) {
+  const get = (label) => {
+    const col = COLUMNS.find(c => c.label === label)
+    const v   = raw[label] ?? raw[col?.key] ?? ''
+    return v.toString().trim()
   }
   return {
-    location:            get(COLUMNS[0]),
-    ndt_method:          get(COLUMNS[1]),
-    date_needed:         get(COLUMNS[2]),
-    job_category:        get(COLUMNS[3]) || null,
-    equipment_no:        get(COLUMNS[4]) || null,
-    contact_name:        get(COLUMNS[5]) || null,
-    contact_phone:       get(COLUMNS[6]) || null,
-    scope_qty:           get(COLUMNS[7]) || null,
-    description:         get(COLUMNS[8]) || null,
-    priority:            get(COLUMNS[9]) || 'Normal',
-    high_temp:           parseBool(get(COLUMNS[10])),
-    needs_scaffold:      parseBool(get(COLUMNS[11])),
-    needs_insulation:    parseBool(get(COLUMNS[12])),
-    needs_painting:      parseBool(get(COLUMNS[13])),
-    material:            get(COLUMNS[14]) || null,
-    thickness_mm:        get(COLUMNS[15]) || null,
-    pipe_size:           get(COLUMNS[16]) || null,
-    p_number:            get(COLUMNS[17]) || null,
-    code_standard:       get(COLUMNS[18]) || null,
-    acceptance:          get(COLUMNS[19]) || null,
-    special_notes:       get(COLUMNS[20]) || null,
+    location:         get('Location'),
+    ndt_method:       get('NDT Method'),
+    date_needed:      get('Date Needed (YYYY-MM-DD)'),
+    job_category:     get('Job Category')  || null,
+    equipment_no:     get('Equipment / Piping No.')  || null,
+    contact_name:     get('Site Contact Name')       || null,
+    contact_phone:    get('Site Contact Phone')      || null,
+    scope_qty:        get('Estimated Quantity')      || null,
+    description:      get('Description of Scope')   || null,
+    priority:         get('Priority') || 'Normal',
+    high_temp:        parseYesNo(get('High Temperature Job')),
+    needs_scaffold:   parseYesNo(get('Scaffold Required')),
+    needs_insulation: parseYesNo(get('Insulation Removal Required')),
+    needs_painting:   parseYesNo(get('Painting Required')),
+    special_notes:    get('Special Notes / Safety') || null,
   }
 }
 
-function validateRow(r, idx) {
+function validateRow(r) {
   const errs = []
-  if (!r.location)    errs.push('Location required')
-  if (!r.ndt_method)  errs.push('NDT Method required')
-  if (!NDT_METHODS.includes(r.ndt_method) && r.ndt_method)
+  if (!r.location)   errs.push('Location required')
+  if (!r.ndt_method) errs.push('NDT Method required')
+  else if (!NDT_METHODS.includes(r.ndt_method))
     errs.push(`Unknown NDT method "${r.ndt_method}"`)
   if (!r.date_needed) errs.push('Date Needed required')
   else if (!/^\d{4}-\d{2}-\d{2}$/.test(r.date_needed))
     errs.push('Date must be YYYY-MM-DD')
   if (r.job_category && !JOB_CATEGORIES.includes(r.job_category))
-    errs.push(`Unknown job category "${r.job_category}"`)
+    errs.push(`Unknown category "${r.job_category}"`)
+  if (r.priority && !PRIORITIES.includes(r.priority))
+    errs.push(`Unknown priority "${r.priority}"`)
   return errs
 }
 
-function downloadTemplate() {
-  const keys = COLUMNS.map(c => c.key)
-  const labels = COLUMNS.map(c => c.label)
-  const hints  = COLUMNS.map(c => c.hint)
-  // 3 rows: header, hint row (commented), one example row
-  const example = [
-    'Tuas Shipyard Berth 7',
-    'MT',
-    '2026-07-15',
-    'Ad-Hoc',
-    'V-1201',
-    'Ahmad',
-    '+65 9123 4567',
-    '50 weld joints',
-    'Visual and MT of welds',
-    'Normal',
-    'FALSE',
-    'FALSE',
-    'FALSE',
-    'FALSE',
-    'Carbon steel pipe',
-    '12.7',
-    '6" NB',
-    'P1',
-    'ASME B31.3',
-    'No linear indications',
-    'Radiation area — obtain clearance',
-  ]
-
-  const csvContent = [
-    labels.join(','),
-    hints.map(h => `"${h}"`).join(','),
-    example.map(v => `"${v}"`).join(','),
-  ].join('\n')
-
-  const blob = new Blob([csvContent], { type: 'text/csv' })
-  const url  = URL.createObjectURL(blob)
-  const a    = document.createElement('a')
-  a.href     = url
-  a.download = 'ndt_bulk_request_template.csv'
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
 export default function BulkUpload() {
-  const router = useRouter()
+  const router  = useRouter()
   const fileRef = useRef()
-  const [profile, setProfile] = useState(null)
-  const [user, setUser]       = useState(null)
-  const [rows, setRows]       = useState([])   // parsed rows with validation
+  const [profile,    setProfile]    = useState(null)
+  const [user,       setUser]       = useState(null)
+  const [rows,       setRows]       = useState([])
   const [submitting, setSubmitting] = useState(false)
-  const [results, setResults]       = useState([]) // per-row submit result
-  const [submitted, setSubmitted]   = useState(false)
+  const [results,    setResults]    = useState([])
+  const [submitted,  setSubmitted]  = useState(false)
 
   useEffect(() => { init() }, [])
 
@@ -187,17 +243,21 @@ export default function BulkUpload() {
     if (!file) return
     const reader = new FileReader()
     reader.onload = (ev) => {
-      const parsed = parseCSV(ev.target.result)
-      const mapped = parsed.map((raw, i) => {
-        const data   = mapRow(raw, profile, user)
-        const errors = validateRow(data, i)
-        return { data, errors, raw }
-      })
-      setRows(mapped)
-      setResults([])
-      setSubmitted(false)
+      try {
+        const parsed = parseXLSX(ev.target.result)
+        const mapped = parsed.map((raw) => {
+          const data   = mapRow(raw)
+          const errors = validateRow(data)
+          return { data, errors }
+        }).filter(r => r.data.location || r.data.ndt_method) // skip fully empty rows
+        setRows(mapped)
+        setResults([])
+        setSubmitted(false)
+      } catch (err) {
+        alert('Could not read file: ' + err.message)
+      }
     }
-    reader.readAsText(file)
+    reader.readAsArrayBuffer(file)
   }
 
   const validRows   = rows.filter(r => r.errors.length === 0)
@@ -231,14 +291,8 @@ export default function BulkUpload() {
         job_category:         row.data.job_category,
         requester_position:   profile.position   || null,
         requester_department: profile.department || null,
-        material:             row.data.material,
-        thickness_mm:         row.data.thickness_mm,
-        pipe_size:            row.data.pipe_size,
-        p_number:             row.data.p_number,
-        code_standard:        row.data.code_standard,
-        acceptance:           row.data.acceptance,
         special_notes:        row.data.special_notes,
-        step2_complete:       !!(row.data.material || row.data.code_standard),
+        step2_complete:       false,
       }).select().single()
       res.push({ ok: !error, requestNo: r?.request_no, error: error?.message })
     }
@@ -260,40 +314,42 @@ export default function BulkUpload() {
     <Layout profile={profile} nav={nav}>
       <div className="max-w-5xl mx-auto">
         <h1 className="text-xl font-bold mb-1">Bulk Upload Requests</h1>
-        <p className="text-sm text-gray-500 mb-6">Download the CSV template, fill in your requests (one per row), then upload to create them all at once.</p>
+        <p className="text-sm text-gray-500 mb-6">
+          Download the Excel template, fill in your requests (one row per request), then upload to create them all at once.
+        </p>
 
-        {/* Step 1 — Download template */}
+        {/* Step 1 — Download */}
         <div className="card mb-5">
-          <div className="section-title">① Download template</div>
+          <div className="section-title">① Download Excel template</div>
           <p className="text-sm text-gray-500 mb-3">
-            The CSV has columns for all request fields. The second row contains hints — delete it before uploading.
+            The template includes dropdown selections for NDT method, category, priority and yes/no fields, plus a Guide sheet with instructions.
           </p>
           <button className="btn btn-primary" onClick={downloadTemplate}>
-            ⬇ Download CSV Template
+            ⬇ Download Excel Template (.xlsx)
           </button>
         </div>
 
-        {/* Step 2 — Upload filled CSV */}
+        {/* Step 2 — Upload */}
         <div className="card mb-5">
-          <div className="section-title">② Upload filled CSV</div>
+          <div className="section-title">② Upload filled Excel file</div>
           <div
             className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-blue-300 transition-colors cursor-pointer"
             onClick={() => fileRef.current?.click()}
           >
-            <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleFile} />
+            <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFile} />
             <div className="text-3xl mb-2">📂</div>
-            <div className="text-sm text-gray-600 font-medium">Click to select your filled CSV file</div>
-            <div className="text-xs text-gray-400 mt-1">CSV files only · Max 5 MB</div>
+            <div className="text-sm text-gray-600 font-medium">Click to select your filled Excel file</div>
+            <div className="text-xs text-gray-400 mt-1">.xlsx or .xls · Max 10 MB</div>
           </div>
         </div>
 
-        {/* Preview table */}
+        {/* Preview */}
         {rows.length > 0 && !submitted && (
           <div className="card mb-5">
             <div className="section-title flex items-center justify-between">
               <span>③ Preview — {rows.length} row{rows.length !== 1 ? 's' : ''} found</span>
               <span className="text-xs font-normal normal-case tracking-normal">
-                {validRows.length > 0 && <span className="text-emerald-600 mr-2">✓ {validRows.length} valid</span>}
+                {validRows.length > 0   && <span className="text-emerald-600 mr-2">✓ {validRows.length} valid</span>}
                 {invalidRows.length > 0 && <span className="text-red-500">✗ {invalidRows.length} with errors (will be skipped)</span>}
               </span>
             </div>
@@ -325,8 +381,7 @@ export default function BulkUpload() {
                       <td className="py-2 px-2">
                         {row.errors.length === 0
                           ? <span className="badge bg-emerald-100 text-emerald-700">✓ Ready</span>
-                          : <span className="badge bg-red-100 text-red-700" title={row.errors.join(', ')}>✗ {row.errors[0]}</span>
-                        }
+                          : <span className="badge bg-red-100 text-red-700" title={row.errors.join(', ')}>✗ {row.errors[0]}</span>}
                       </td>
                     </tr>
                   ))}
@@ -361,14 +416,14 @@ export default function BulkUpload() {
             <div className="space-y-1.5">
               {results.map((r, i) => (
                 <div key={i} className={`flex items-center gap-3 text-sm px-3 py-2 rounded-lg ${
-                  r.skipped ? 'bg-gray-50 text-gray-400' :
-                  r.ok      ? 'bg-emerald-50 text-emerald-800' :
-                              'bg-red-50 text-red-700'
+                  r.skipped ? 'bg-gray-50 text-gray-400'
+                  : r.ok    ? 'bg-emerald-50 text-emerald-800'
+                  :           'bg-red-50 text-red-700'
                 }`}>
                   <span className="font-medium w-16">Row {i + 1}</span>
-                  {r.skipped && <span>Skipped (validation error)</span>}
-                  {!r.skipped && r.ok && <span>✓ Created — <span className="font-semibold">{r.requestNo}</span></span>}
-                  {!r.skipped && !r.ok && <span>✗ Failed: {r.error}</span>}
+                  {r.skipped             && <span>Skipped (validation error)</span>}
+                  {!r.skipped &&  r.ok   && <span>✓ Created — <span className="font-semibold">{r.requestNo}</span></span>}
+                  {!r.skipped && !r.ok   && <span>✗ Failed: {r.error}</span>}
                 </div>
               ))}
             </div>
@@ -380,31 +435,6 @@ export default function BulkUpload() {
             </div>
           </div>
         )}
-
-        {/* Column reference */}
-        <details className="card mb-5 cursor-pointer">
-          <summary className="section-title cursor-pointer select-none">📋 Column reference</summary>
-          <div className="overflow-x-auto mt-3">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left py-1.5 px-2 text-gray-400 font-medium">Column</th>
-                  <th className="text-left py-1.5 px-2 text-gray-400 font-medium">Required</th>
-                  <th className="text-left py-1.5 px-2 text-gray-400 font-medium">Accepted values / hint</th>
-                </tr>
-              </thead>
-              <tbody>
-                {COLUMNS.map(c => (
-                  <tr key={c.key} className="border-b border-gray-50">
-                    <td className="py-1.5 px-2 font-medium text-gray-700">{c.label}</td>
-                    <td className="py-1.5 px-2">{c.required ? <span className="badge bg-red-100 text-red-700">Yes</span> : <span className="text-gray-300">—</span>}</td>
-                    <td className="py-1.5 px-2 text-gray-500 max-w-xs truncate" title={c.hint}>{c.hint || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </details>
       </div>
     </Layout>
   )
