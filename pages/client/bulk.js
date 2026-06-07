@@ -45,127 +45,105 @@ function parseYesNo(v) {
 }
 
 async function downloadTemplate() {
-  const XLSX = (await import('xlsx')).default
+  try {
+    const XLSX = (await import('xlsx')).default
 
-  // ── Dropdowns live in a hidden "Lists" sheet ──────────────────────────
-  const listData = [
-    ['NDT Methods', ...NDT_METHODS],
-    ['Job Category', ...JOB_CATEGORIES],
-    ['Priority', ...PRIORITIES],
-    ['Yes / No', ...YES_NO],
-  ]
-  const listsWs = XLSX.utils.aoa_to_sheet(listData)
-  // hide the lists sheet
-  listsWs['!sheetHide'] = true
+    // Inline dropdown strings (work with free SheetJS)
+    const ndtList = '"' + NDT_METHODS.join(',') + '"'
+    const catList = '"' + JOB_CATEGORIES.join(',') + '"'
+    const priList = '"' + PRIORITIES.join(',') + '"'
+    const ynList  = '"Yes,No"'
 
-  // ── Data sheet ────────────────────────────────────────────────────────
-  const headers = COLUMNS.map(c => c.label)
-  const dataWs  = XLSX.utils.aoa_to_sheet([headers])
+    // ── Data sheet ──────────────────────────────────────────────────────
+    const headers = COLUMNS.map(c => c.label)
+    const dataWs  = XLSX.utils.aoa_to_sheet([headers])
 
-  // Column widths
-  dataWs['!cols'] = COLUMNS.map(c => ({
-    wch: c.key === 'location' || c.key === 'description' || c.key === 'special_notes' ? 40 : 22,
-  }))
+    // Column widths
+    dataWs['!cols'] = COLUMNS.map(c => ({
+      wch: ['location','description','special_notes'].includes(c.key) ? 42 : 24,
+    }))
 
-  // Freeze header row
-  dataWs['!freeze'] = { xSplit: 0, ySplit: 1 }
+    // Freeze header row
+    dataWs['!freeze'] = { xSplit: 0, ySplit: 1 }
 
-  // Style header row: white bold text on brand blue (#185FA5)
-  COLUMNS.forEach((_, ci) => {
-    const addr = XLSX.utils.encode_cell({ r: 0, c: ci })
-    if (!dataWs[addr]) return
-    dataWs[addr].s = {
-      font:      { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
-      fill:      { fgColor: { rgb: '185FA5' }, patternType: 'solid' },
-      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-      border: {
-        bottom: { style: 'thin', color: { rgb: 'FFFFFF' } },
-        right:  { style: 'thin', color: { rgb: 'FFFFFF' } },
-      },
-    }
-  })
+    // Style header row: white bold text on brand blue (#185FA5)
+    COLUMNS.forEach((_, ci) => {
+      const addr = XLSX.utils.encode_cell({ r: 0, c: ci })
+      if (!dataWs[addr]) return
+      dataWs[addr].s = {
+        font:      { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+        fill:      { fgColor: { rgb: '185FA5' }, patternType: 'solid' },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      }
+    })
 
-  // Data-validation dropdowns for rows 2–201 (200 request rows)
-  const colIdx  = (key) => COLUMNS.findIndex(c => c.key === key)
-  const colLetter = (key) => XLSX.utils.encode_col(colIdx(key))
+    // Data-validation dropdowns (rows 2–201)
+    const colLetter = (key) => XLSX.utils.encode_col(COLUMNS.findIndex(c => c.key === key))
+    const dv = (key, list) => ({
+      sqref: `${colLetter(key)}2:${colLetter(key)}201`,
+      type: 'list', formula1: list,
+      showErrorMessage: true, errorTitle: 'Invalid value', error: 'Please select from the dropdown list.',
+    })
 
-  const ndtCol  = colLetter('ndt_method')
-  const catCol  = colLetter('job_category')
-  const priCol  = colLetter('priority')
-  const htCol   = colLetter('high_temp')
-  const scCol   = colLetter('needs_scaffold')
-  const insCol  = colLetter('needs_insulation')
-  const ptCol   = colLetter('needs_painting')
+    dataWs['!dataValidation'] = [
+      dv('ndt_method',       ndtList),
+      dv('job_category',     catList),
+      dv('priority',         priList),
+      dv('high_temp',        ynList),
+      dv('needs_scaffold',   ynList),
+      dv('needs_insulation', ynList),
+      dv('needs_painting',   ynList),
+    ]
 
-  // Lists sheet ranges (row 1 = headers, data starts row 2)
-  const ndtRange  = `Lists!$B$1:$${XLSX.utils.encode_col(NDT_METHODS.length)}$1`
-  const catRange  = `Lists!$B$2:$${XLSX.utils.encode_col(JOB_CATEGORIES.length)}$2`
-  const priRange  = `Lists!$B$3:$${XLSX.utils.encode_col(PRIORITIES.length)}$3`
-  const ynRange   = `Lists!$B$4:$${XLSX.utils.encode_col(YES_NO.length)}$4`
+    // ── Guide sheet ─────────────────────────────────────────────────────
+    const noteFor = (key) => ({
+      ndt_method:       'Select from dropdown — ' + NDT_METHODS.join(', '),
+      job_category:     'Select from dropdown — ' + JOB_CATEGORIES.join(', '),
+      priority:         'Select from dropdown — Normal / Urgent / Shutdown / turnaround (default: Normal)',
+      high_temp:        'Select Yes or No',
+      needs_scaffold:   'Select Yes or No',
+      needs_insulation: 'Select Yes or No',
+      needs_painting:   'Select Yes or No',
+      date_needed:      'Format: YYYY-MM-DD  e.g. 2026-07-15',
+      location:         'e.g. Tuas Shipyard, Berth 7 / Unit 3',
+      equipment_no:     'e.g. V-1201, P-4401A',
+      contact_phone:    'e.g. +65 9123 4567',
+      scope_qty:        'e.g. 50 weld joints, 200 m²',
+    })[key] || ''
 
-  dataWs['!dataValidation'] = [
-    { sqref: `${ndtCol}2:${ndtCol}201`, type: 'list', formula1: ndtRange,  showDropDown: false, showErrorMessage: true, errorTitle: 'Invalid', error: 'Select from the list.' },
-    { sqref: `${catCol}2:${catCol}201`, type: 'list', formula1: catRange,  showDropDown: false, showErrorMessage: true, errorTitle: 'Invalid', error: 'Select from the list.' },
-    { sqref: `${priCol}2:${priCol}201`, type: 'list', formula1: priRange,  showDropDown: false, showErrorMessage: true, errorTitle: 'Invalid', error: 'Select from the list.' },
-    { sqref: `${htCol}2:${htCol}201`,   type: 'list', formula1: ynRange,   showDropDown: false, showErrorMessage: true, errorTitle: 'Invalid', error: 'Select Yes or No.' },
-    { sqref: `${scCol}2:${scCol}201`,   type: 'list', formula1: ynRange,   showDropDown: false, showErrorMessage: true, errorTitle: 'Invalid', error: 'Select Yes or No.' },
-    { sqref: `${insCol}2:${insCol}201`, type: 'list', formula1: ynRange,   showDropDown: false, showErrorMessage: true, errorTitle: 'Invalid', error: 'Select Yes or No.' },
-    { sqref: `${ptCol}2:${ptCol}201`,   type: 'list', formula1: ynRange,   showDropDown: false, showErrorMessage: true, errorTitle: 'Invalid', error: 'Select Yes or No.' },
-  ]
+    const guideRows = [
+      ['NDT Bulk Request Form — How to Fill'],
+      [],
+      ['STEP 1', 'Open the "Requests" sheet (tab at the bottom). Each row = one NDT request.'],
+      ['STEP 2', 'Click any dropdown cell to pick from the list. Fill in text fields directly.'],
+      ['STEP 3', 'Save the file, then upload it on the NDT portal Bulk Upload page.'],
+      [],
+      ['Column', 'Required?', 'Notes'],
+      ...COLUMNS.map(c => [c.label, c.required ? 'YES *' : 'Optional', noteFor(c.key)]),
+      [],
+      ['* Rows missing required fields will be skipped during upload.'],
+    ]
 
-  // ── Guide sheet ───────────────────────────────────────────────────────
-  const guideRows = [
-    ['NDT Bulk Request Form — How to Fill'],
-    [],
-    ['STEP 1', 'Fill in the "Requests" sheet below. Each row = one NDT request.'],
-    ['STEP 2', 'Columns with a dropdown arrow show a list — click the cell and choose from the list.'],
-    ['STEP 3', 'Save the file and upload it on the NDT portal Bulk Upload page.'],
-    [],
-    ['Column', 'Required?', 'Notes'],
-    ...COLUMNS.map(c => [
-      c.label,
-      c.required ? 'YES *' : 'Optional',
-      c.key === 'ndt_method'     ? 'Choose from dropdown — ' + NDT_METHODS.join(', ') :
-      c.key === 'job_category'   ? 'Choose from dropdown — ' + JOB_CATEGORIES.join(', ') :
-      c.key === 'priority'       ? 'Choose from dropdown — Normal / Urgent / Shutdown / turnaround  (default: Normal)' :
-      c.key === 'high_temp'      ? 'Dropdown — Yes / No' :
-      c.key === 'needs_scaffold' ? 'Dropdown — Yes / No' :
-      c.key === 'needs_insulation' ? 'Dropdown — Yes / No' :
-      c.key === 'needs_painting' ? 'Dropdown — Yes / No' :
-      c.key === 'date_needed'    ? 'Format: YYYY-MM-DD  e.g. 2026-07-15' :
-      c.key === 'location'       ? 'e.g. Tuas Shipyard, Berth 7 / Unit 3' :
-      c.key === 'equipment_no'   ? 'e.g. V-1201, P-4401A' :
-      c.key === 'contact_phone'  ? 'e.g. +65 9123 4567' :
-      c.key === 'scope_qty'      ? 'e.g. 50 weld joints, 200 m²' :
-      '',
-    ]),
-    [],
-    ['* Rows missing required fields will be skipped during upload.'],
-  ]
+    const guideWs = XLSX.utils.aoa_to_sheet(guideRows)
+    guideWs['!cols'] = [{ wch: 32 }, { wch: 12 }, { wch: 72 }]
+    if (guideWs['A1']) guideWs['A1'].s = { font: { bold: true, sz: 14, color: { rgb: '185FA5' } } }
+    ;['A7','B7','C7'].forEach(addr => {
+      if (!guideWs[addr]) return
+      guideWs[addr].s = {
+        font: { bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '185FA5' }, patternType: 'solid' },
+      }
+    })
 
-  const guideWs = XLSX.utils.aoa_to_sheet(guideRows)
-  guideWs['!cols'] = [{ wch: 30 }, { wch: 14 }, { wch: 70 }]
+    // ── Assemble workbook ───────────────────────────────────────────────
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, dataWs,  'Requests')
+    XLSX.utils.book_append_sheet(wb, guideWs, 'Guide')
 
-  // Style guide header
-  guideWs['A1'].s = {
-    font: { bold: true, sz: 14, color: { rgb: '185FA5' } },
+    XLSX.writeFile(wb, 'NDT_Bulk_Request_Template.xlsx', { cellStyles: true })
+  } catch (err) {
+    alert('Could not generate template: ' + err.message)
   }
-  // Style column header row (row index 6 = row 7)
-  ;['A7','B7','C7'].forEach(addr => {
-    if (!guideWs[addr]) return
-    guideWs[addr].s = {
-      font: { bold: true, color: { rgb: 'FFFFFF' } },
-      fill: { fgColor: { rgb: '185FA5' }, patternType: 'solid' },
-    }
-  })
-
-  // ── Assemble workbook ─────────────────────────────────────────────────
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, dataWs,  'Requests')
-  XLSX.utils.book_append_sheet(wb, guideWs, 'Guide')
-  XLSX.utils.book_append_sheet(wb, listsWs, 'Lists')
-
-  XLSX.writeFile(wb, 'NDT_Bulk_Request_Template.xlsx', { cellStyles: true })
 }
 
 function parseXLSX(buffer) {
