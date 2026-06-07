@@ -11,6 +11,7 @@ const NAV = [
   { href: '/client/all-requests', label: 'All Requests', icon: '📋' },
   { href: '/client/schedule',     label: 'Schedule',     icon: '📅' },
   { href: '/client/new',          label: 'New Request',  icon: '➕' },
+  { href: '/client/bulk',         label: 'Bulk Upload',  icon: '📤' },
 ]
 
 export default function ClientDashboard() {

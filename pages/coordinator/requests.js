@@ -60,6 +60,7 @@ const NAV = (badge) => [
   { href: '/coordinator/dashboard', label: 'Dashboard',    icon: '📊' },
   { href: '/coordinator/requests',  label: 'All Requests', icon: '📋' },
   { href: '/client/new',            label: 'New Request',  icon: '➕', badge },
+  { href: '/client/bulk',           label: 'Bulk Upload',  icon: '📤' },
 ]
 
 export default function CoordinatorRequests() {
