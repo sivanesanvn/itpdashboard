@@ -24,9 +24,9 @@ export default function LoginPage() {
     setLoading(true); setError('')
     const { data, error: err } = await supabase.auth.signInWithPassword({ email, password })
     if (err) { setError(err.message); setLoading(false); return }
-    await supabase.auth.setSession(data.session)
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single()
-    if (!profile) { setError('Profile not found. Contact your manager.'); setLoading(false); return }
+    const res = await fetch('/api/get-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: data.user.id }) })
+    if (!res.ok) { setError('Profile not found. Contact your manager.'); setLoading(false); return }
+    const profile = await res.json()
     router.push(ROLE_ROUTES[profile.role] || '/')
   }
 
