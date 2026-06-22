@@ -75,6 +75,8 @@ export default function ManagerRequests() {
   const [selected, setSelected] = useState(null)
   const [docs, setDocs]         = useState([])
   const [printing, setPrinting] = useState(false)
+  const [page, setPage]         = useState(1)
+  const PAGE_SIZE = 15
 
   useEffect(() => { init() }, [])
 
@@ -115,7 +117,7 @@ export default function ManagerRequests() {
     setSelected(prev => prev ? { ...prev, status } : null)
   }
 
-  const setCol = (key, val) => setColFilters(prev => ({ ...prev, [key]: val }))
+  const setCol = (key, val) => { setColFilters(prev => ({ ...prev, [key]: val })); setPage(1) }
   const hasColFilters = Object.values(colFilters).some(Boolean)
 
   const uniqueVals = (key) => [...new Set(requests.map(r => r[key]).filter(Boolean))].sort()
@@ -134,6 +136,8 @@ export default function ManagerRequests() {
     return matchSearch && matchFrom && matchTo && matchStatus && matchMethod && matchEquip && matchLoc && matchCat && matchBy
   })
 
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
   const newCount = requests.filter(r => r.status === 'New request').length
 
   return (
@@ -145,13 +149,13 @@ export default function ManagerRequests() {
         <div className="flex gap-2 flex-wrap items-center">
           <div className="relative">
             <input className="input w-52 text-sm pl-8" placeholder="Search ID, company, method…"
-              value={search} onChange={e => setSearch(e.target.value)} />
+              value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} />
             <span className="absolute left-2.5 top-2.5 text-gray-400 text-sm">🔍</span>
           </div>
-          <input className="input text-xs py-1.5 w-32" type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
-          <input className="input text-xs py-1.5 w-32" type="date" value={dateTo}   onChange={e => setDateTo(e.target.value)} />
+          <input className="input text-xs py-1.5 w-32" type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1) }} />
+          <input className="input text-xs py-1.5 w-32" type="date" value={dateTo}   onChange={e => { setDateTo(e.target.value); setPage(1) }} />
           {(search || dateFrom || dateTo || hasColFilters) && (
-            <button onClick={() => { setSearch(''); setDateFrom(''); setDateTo(''); setColFilters(EMPTY_COL) }}
+            <button onClick={() => { setSearch(''); setDateFrom(''); setDateTo(''); setColFilters(EMPTY_COL); setPage(1) }}
               className="text-xs text-blue-600">Clear all</button>
           )}
         </div>
@@ -203,7 +207,7 @@ export default function ManagerRequests() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {filtered.map(r => (
+            {paginated.map(r => (
               <tr key={r.id} onClick={() => openRequest(r)}
                 className="hover:bg-blue-50/30 cursor-pointer transition-colors">
                 <td className="px-3 py-2.5 whitespace-nowrap font-semibold text-blue-700">{r.request_no}</td>
@@ -229,6 +233,38 @@ export default function ManagerRequests() {
           <div className="text-center text-gray-400 py-10 text-sm">No requests found.</div>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
+          <span>
+            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
+          </span>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setPage(1)} disabled={page === 1}
+              className="px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed">«</button>
+            <button onClick={() => setPage(p => p - 1)} disabled={page === 1}
+              className="px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed">‹</button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+              .reduce((acc, p, idx, arr) => {
+                if (idx > 0 && p - arr[idx - 1] > 1) acc.push('…')
+                acc.push(p)
+                return acc
+              }, [])
+              .map((p, i) => p === '…'
+                ? <span key={`e${i}`} className="px-1">…</span>
+                : <button key={p} onClick={() => setPage(p)}
+                    className={`px-2.5 py-1 rounded border ${page === p ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 hover:bg-gray-50'}`}>
+                    {p}
+                  </button>
+              )}
+            <button onClick={() => setPage(p => p + 1)} disabled={page === totalPages}
+              className="px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed">›</button>
+            <button onClick={() => setPage(totalPages)} disabled={page === totalPages}
+              className="px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed">»</button>
+          </div>
+        </div>
+      )}
 
       {/* ── Detail drawer ── */}
       {selected && profile && (
