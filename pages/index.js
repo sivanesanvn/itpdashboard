@@ -24,7 +24,6 @@ export default function LoginPage() {
     setLoading(true); setError('')
     const { data, error: err } = await supabase.auth.signInWithPassword({ email, password })
     if (err) { setError(err.message); setLoading(false); return }
-    await supabase.auth.setSession(data.session)
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single()
     if (!profile) { setError('Profile not found. Contact your manager.'); setLoading(false); return }
     router.push(ROLE_ROUTES[profile.role] || '/')
