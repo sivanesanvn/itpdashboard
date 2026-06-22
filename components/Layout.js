@@ -61,8 +61,6 @@ export default function Layout({ profile, nav = [], children }) {
       <header className="bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
         <div className="flex items-center gap-3 px-4 py-2">
           <img src="/cutech_logo.png" alt="Cutech" style={{height:'32px',width:'auto',display:'block'}} />
-          <div className="w-px h-6 bg-gray-200" />
-          <img src="/ticwerks_logo.svg" alt="TicWerks" style={{height:'32px',width:'auto',display:'block'}} />
 
           <div className="ml-auto flex items-center gap-2">
             {profile && (
@@ -116,14 +114,10 @@ export default function Layout({ profile, nav = [], children }) {
 
       <main className="flex-1 p-3 sm:p-4 max-w-7xl mx-auto w-full">{children}</main>
 
-      <footer className="border-t border-gray-100 bg-white py-2 px-4 flex items-center justify-between">
+      <footer className="border-t border-gray-100 bg-white py-2 px-4 flex items-center gap-2">
         <div className="flex items-center gap-2">
           <img src="/cutech_logo.png" alt="Cutech" style={{height:'20px',width:'auto'}} />
           <span className="text-xs text-gray-400">NDT Portal · Singapore</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-400 font-medium">Powered by</span>
-          <img src="/ticwerks_logo.svg" alt="TicWerks" style={{height:'26px',width:'auto'}} />
         </div>
       </footer>
 
